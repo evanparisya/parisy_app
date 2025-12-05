@@ -70,7 +70,10 @@ class InjectionContainer {
       // Profile (depends on AuthController)
       ChangeNotifierProxyProvider<AuthController, ProfileController>(
         create: (_) => ProfileController(
-            authController: AuthController(authService: AuthService(apiClient: ApiClient()))),
+          authController: AuthController(
+            authService: AuthService(apiClient: ApiClient()),
+          ),
+        ),
         update: (_, authController, __) =>
             ProfileController(authController: authController),
       ),
