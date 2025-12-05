@@ -88,9 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
 
           if (profileController.user == null) {
-            return EmptyStateWidget(
-              message: 'Profil tidak ditemukan',
-            );
+            return EmptyStateWidget(message: 'Profil tidak ditemukan');
           }
 
           return SafeArea(
@@ -241,20 +239,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         label: 'Simpan Perubahan',
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            final success =
-                                await profileController.updateProfile(
-                              name: _nameController.text,
-                              phone: _phoneController.text,
-                              address: _addressController.text,
-                            );
+                            final success = await profileController
+                                .updateProfile(
+                                  name: _nameController.text,
+                                  phone: _phoneController.text,
+                                  address: _addressController.text,
+                                );
 
                             if (success && mounted) {
                               setState(() => _isEditing = false);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('Profil berhasil diperbarui'),
-                                  backgroundColor:
-                                      Color(AppColors.successGreen),
+                                  backgroundColor: Color(
+                                    AppColors.successGreen,
+                                  ),
                                   duration: Duration(seconds: 2),
                                 ),
                               );

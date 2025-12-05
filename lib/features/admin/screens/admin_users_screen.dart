@@ -77,9 +77,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 }
 
                 if (adminController.users.isEmpty) {
-                  return Center(
-                    child: Text('Tidak ada warga'),
-                  );
+                  return Center(child: Text('Tidak ada warga'));
                 }
 
                 return ListView.builder(
@@ -166,10 +164,7 @@ class _UserCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Color(AppColors.neutralWhite),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Color(AppColors.neutralGray),
-          width: 1,
-        ),
+        border: Border.all(color: Color(AppColors.neutralGray), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,7 +197,10 @@ class _UserCard extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.edit, color: Color(AppColors.primaryGreen)),
+                    icon: Icon(
+                      Icons.edit,
+                      color: Color(AppColors.primaryGreen),
+                    ),
                     onPressed: onEdit,
                   ),
                   IconButton(
@@ -216,23 +214,37 @@ class _UserCard extends StatelessWidget {
           SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.phone, size: 12, color: Color(AppColors.neutralDarkGray)),
+              Icon(
+                Icons.phone,
+                size: 12,
+                color: Color(AppColors.neutralDarkGray),
+              ),
               SizedBox(width: 4),
               Text(
                 user.phone,
-                style: TextStyle(fontSize: 11, color: Color(AppColors.neutralDarkGray)),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(AppColors.neutralDarkGray),
+                ),
               ),
             ],
           ),
           SizedBox(height: 4),
           Row(
             children: [
-              Icon(Icons.location_on, size: 12, color: Color(AppColors.neutralDarkGray)),
+              Icon(
+                Icons.location_on,
+                size: 12,
+                color: Color(AppColors.neutralDarkGray),
+              ),
               SizedBox(width: 4),
               Expanded(
                 child: Text(
                   user.address,
-                  style: TextStyle(fontSize: 11, color: Color(AppColors.neutralDarkGray)),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(AppColors.neutralDarkGray),
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -267,7 +279,9 @@ class _UserFormDialogState extends State<_UserFormDialog> {
     _nameController = TextEditingController(text: widget.user?.name ?? '');
     _emailController = TextEditingController(text: widget.user?.email ?? '');
     _phoneController = TextEditingController(text: widget.user?.phone ?? '');
-    _addressController = TextEditingController(text: widget.user?.address ?? '');
+    _addressController = TextEditingController(
+      text: widget.user?.address ?? '',
+    );
   }
 
   @override
@@ -293,7 +307,8 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 label: 'Nama',
                 hint: 'Masukkan nama',
                 controller: _nameController,
-                validator: (value) => value?.isEmpty ?? true ? 'Nama harus diisi' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Nama harus diisi' : null,
               ),
               SizedBox(height: 12),
               InputField(
@@ -301,7 +316,8 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 hint: 'Masukkan email',
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) => value?.isEmpty ?? true ? 'Email harus diisi' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Email harus diisi' : null,
               ),
               SizedBox(height: 12),
               InputField(
@@ -309,14 +325,16 @@ class _UserFormDialogState extends State<_UserFormDialog> {
                 hint: 'Masukkan nomor telepon',
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                validator: (value) => value?.isEmpty ?? true ? 'Nomor telepon harus diisi' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Nomor telepon harus diisi' : null,
               ),
               SizedBox(height: 12),
               InputField(
                 label: 'Alamat',
                 hint: 'Masukkan alamat',
                 controller: _addressController,
-                validator: (value) => value?.isEmpty ?? true ? 'Alamat harus diisi' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Alamat harus diisi' : null,
               ),
             ],
           ),
@@ -331,7 +349,9 @@ class _UserFormDialogState extends State<_UserFormDialog> {
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               final user = AdminUserModel(
-                id: widget.user?.id ?? 'USER-${DateTime.now().millisecondsSinceEpoch}',
+                id:
+                    widget.user?.id ??
+                    'USER-${DateTime.now().millisecondsSinceEpoch}',
                 name: _nameController.text,
                 email: _emailController.text,
                 phone: _phoneController.text,

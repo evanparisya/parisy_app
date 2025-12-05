@@ -33,7 +33,9 @@ class ProductModel {
       imageUrl: json['image_url'] ?? '',
       description: json['description'],
       category: json['category'],
-      rating: json['rating'] != null ? (json['rating'] as num).toDouble() : null,
+      rating: json['rating'] != null
+          ? (json['rating'] as num).toDouble()
+          : null,
       reviewCount: json['review_count'],
       stock: json['stock'],
     );

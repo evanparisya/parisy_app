@@ -128,7 +128,7 @@ class OrderController extends ChangeNotifier {
     _statusSubscription?.cancel();
 
     try {
-      // NOTE: We don't set _isLoadingOrderStatus = true here, as the initial 
+      // NOTE: We don't set _isLoadingOrderStatus = true here, as the initial
       // load of OrderDetailScreen might rely on orderController.state == OrderState.loading.
       // We rely on the stream listener below to set it to false on the first data event.
 
@@ -153,12 +153,11 @@ class OrderController extends ChangeNotifier {
               notifyListeners(); // Notify UI: error
             },
           );
-      
-      // Set loading state *after* the stream starts, so the UI can show a loader 
+
+      // Set loading state *after* the stream starts, so the UI can show a loader
       // while the first stream event is awaited.
       _isLoadingOrderStatus = true;
       notifyListeners();
-
     } catch (e) {
       _errorMessage = e.toString();
       _isLoadingOrderStatus = false;
@@ -175,14 +174,14 @@ class OrderController extends ChangeNotifier {
       notifyListeners(); // Notify UI: canceling
 
       await orderService.cancelOrder(orderId);
-      
+
       // Manually update the map since the real-time stream might take a second to catch up
       _orderStatusMap[orderId] = OrderStatusUpdate(
         orderId: orderId,
         status: 'cancelled',
         timestamp: DateTime.now(),
       );
-      
+
       _isLoadingOrderStatus = false;
       notifyListeners(); // Notify UI: cancelled
 

@@ -250,9 +250,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 )
               else if (controller.products.isEmpty)
                 SliverFillRemaining(
-                  child: EmptyStateWidget(
-                    message: 'Tidak ada produk',
-                  ),
+                  child: EmptyStateWidget(message: 'Tidak ada produk'),
                 )
               else
                 Selector<MarketplaceController, List<ProductModel>>(
@@ -276,25 +274,26 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => ProductDetailScreen(
-                                    product: product,
-                                  ),
+                                  builder: (context) =>
+                                      ProductDetailScreen(product: product),
                                 ),
                               );
                             },
                             onAddToCart: () {
                               // Add to cart
                               context.read<CartController>().addItem(
-                                    productId: product.id,
-                                    name: product.name,
-                                    price: product.price,
-                                  );
+                                productId: product.id,
+                                name: product.name,
+                                price: product.price,
+                              );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
                                     '${product.name} ditambahkan ke keranjang',
                                   ),
-                                  backgroundColor: Color(AppColors.successGreen),
+                                  backgroundColor: Color(
+                                    AppColors.successGreen,
+                                  ),
                                   duration: Duration(seconds: 2),
                                 ),
                               );

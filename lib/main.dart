@@ -48,8 +48,9 @@ class RootApp extends StatelessWidget {
       builder: (context, authController, _) {
         if (authController.isAuthenticated) {
           // Check if user is admin or regular user
-          final isAdmin = authController.currentUser?.id.startsWith('ADMIN') ?? false;
-          
+          final isAdmin =
+              authController.currentUser?.id.startsWith('ADMIN') ?? false;
+
           if (isAdmin) {
             return AdminDashboardScreen();
           } else {

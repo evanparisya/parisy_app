@@ -79,9 +79,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 }
 
                 if (adminController.products.isEmpty) {
-                  return Center(
-                    child: Text('Tidak ada barang'),
-                  );
+                  return Center(child: Text('Tidak ada barang'));
                 }
 
                 return ListView.builder(
@@ -168,10 +166,7 @@ class _ProductCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Color(AppColors.neutralWhite),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Color(AppColors.neutralGray),
-          width: 1,
-        ),
+        border: Border.all(color: Color(AppColors.neutralGray), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +182,10 @@ class _ProductCard extends StatelessWidget {
                   color: Color(AppColors.neutralGray),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.image, color: Color(AppColors.neutralDarkGray)),
+                child: Icon(
+                  Icons.image,
+                  color: Color(AppColors.neutralDarkGray),
+                ),
               ),
               SizedBox(width: 12),
               Expanded(
@@ -251,7 +249,10 @@ class _ProductCard extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.edit, color: Color(AppColors.primaryGreen)),
+                    icon: Icon(
+                      Icons.edit,
+                      color: Color(AppColors.primaryGreen),
+                    ),
                     onPressed: onEdit,
                     iconSize: 18,
                   ),
@@ -287,7 +288,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   late TextEditingController _categoryController;
   late TextEditingController _sellerEmailController;
   final _formKey = GlobalKey<FormState>();
-  
+
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -295,11 +296,21 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.product?.name ?? '');
-    _descriptionController = TextEditingController(text: widget.product?.description ?? '');
-    _priceController = TextEditingController(text: widget.product?.price.toString() ?? '');
-    _stockController = TextEditingController(text: widget.product?.stock.toString() ?? '');
-    _categoryController = TextEditingController(text: widget.product?.category ?? '');
-    _sellerEmailController = TextEditingController(text: widget.product?.sellerEmail ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.product?.description ?? '',
+    );
+    _priceController = TextEditingController(
+      text: widget.product?.price.toString() ?? '',
+    );
+    _stockController = TextEditingController(
+      text: widget.product?.stock.toString() ?? '',
+    );
+    _categoryController = TextEditingController(
+      text: widget.product?.category ?? '',
+    );
+    _sellerEmailController = TextEditingController(
+      text: widget.product?.sellerEmail ?? '',
+    );
   }
 
   @override
@@ -314,7 +325,9 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   }
 
   Future<void> _pickImageFromGallery() async {
-    final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+    );
     if (image != null) {
       setState(() {
         _selectedImage = File(image.path);
@@ -323,7 +336,9 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   }
 
   Future<void> _takePhotoFromCamera() async {
-    final XFile? image = await _imagePicker.pickImage(source: ImageSource.camera);
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+    );
     if (image != null) {
       setState(() {
         _selectedImage = File(image.path);
@@ -386,10 +401,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
                 child: _selectedImage != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(6),
-                        child: Image.file(
-                          _selectedImage!,
-                          fit: BoxFit.cover,
-                        ),
+                        child: Image.file(_selectedImage!, fit: BoxFit.cover),
                       )
                     : Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -430,14 +442,16 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
                 label: 'Nama Barang',
                 hint: 'Masukkan nama barang',
                 controller: _nameController,
-                validator: (value) => value?.isEmpty ?? true ? 'Nama harus diisi' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Nama harus diisi' : null,
               ),
               SizedBox(height: 12),
               InputField(
                 label: 'Deskripsi',
                 hint: 'Masukkan deskripsi',
                 controller: _descriptionController,
-                validator: (value) => value?.isEmpty ?? true ? 'Deskripsi harus diisi' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Deskripsi harus diisi' : null,
               ),
               SizedBox(height: 12),
               InputField(
@@ -445,7 +459,8 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
                 hint: 'Masukkan harga',
                 controller: _priceController,
                 keyboardType: TextInputType.number,
-                validator: (value) => value?.isEmpty ?? true ? 'Harga harus diisi' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Harga harus diisi' : null,
               ),
               SizedBox(height: 12),
               InputField(
@@ -453,14 +468,16 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
                 hint: 'Masukkan stok',
                 controller: _stockController,
                 keyboardType: TextInputType.number,
-                validator: (value) => value?.isEmpty ?? true ? 'Stok harus diisi' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Stok harus diisi' : null,
               ),
               SizedBox(height: 12),
               InputField(
                 label: 'Kategori',
                 hint: 'Masukkan kategori',
                 controller: _categoryController,
-                validator: (value) => value?.isEmpty ?? true ? 'Kategori harus diisi' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Kategori harus diisi' : null,
               ),
               SizedBox(height: 12),
               InputField(
@@ -468,7 +485,8 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
                 hint: 'Masukkan email penjual',
                 controller: _sellerEmailController,
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) => value?.isEmpty ?? true ? 'Email penjual harus diisi' : null,
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Email penjual harus diisi' : null,
               ),
             ],
           ),
@@ -483,7 +501,9 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
           onPressed: () {
             if (_formKey.currentState!.validate()) {
               final product = AdminProductModel(
-                id: widget.product?.id ?? 'PROD-${DateTime.now().millisecondsSinceEpoch}',
+                id:
+                    widget.product?.id ??
+                    'PROD-${DateTime.now().millisecondsSinceEpoch}',
                 name: _nameController.text,
                 description: _descriptionController.text,
                 price: double.parse(_priceController.text),

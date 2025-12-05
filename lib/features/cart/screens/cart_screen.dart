@@ -50,9 +50,7 @@ class _CartScreenState extends State<CartScreen> {
       body: Consumer<CartController>(
         builder: (context, cartController, child) {
           if (cartController.items.isEmpty) {
-            return EmptyStateWidget(
-              message: AppStrings.emptyCart,
-            );
+            return EmptyStateWidget(message: AppStrings.emptyCart);
           }
 
           return Column(
@@ -168,7 +166,9 @@ class _CartScreenState extends State<CartScreen> {
                                     Spacer(),
                                     GestureDetector(
                                       onTap: () {
-                                        cartController.removeItem(item.productId);
+                                        cartController.removeItem(
+                                          item.productId,
+                                        );
                                       },
                                       child: Icon(
                                         Icons.delete_outline,
@@ -354,7 +354,8 @@ class _CartScreenState extends State<CartScreen> {
                                 );
 
                             if (result && mounted) {
-                              final cartController = context.read<CartController>();
+                              final cartController = context
+                                  .read<CartController>();
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

@@ -4,7 +4,7 @@ import '../models/user_model.dart';
 
 class AuthService {
   final ApiClient apiClient;
-  
+
   // Enable mock mode for testing (set to false when backend is ready)
   static const bool useMockAuth = true;
 
@@ -19,7 +19,7 @@ class AuthService {
     if (useMockAuth) {
       return _mockLogin(email: email, password: password);
     }
-    
+
     // Jika tidak, gunakan API real
     return _apiLogin(email: email, password: password);
   }
@@ -126,7 +126,7 @@ class AuthService {
     if (useMockAuth) {
       return _mockRegister(email: email, password: password, name: name);
     }
-    
+
     // Jika tidak, gunakan API real
     return _apiRegister(email: email, password: password, name: name);
   }

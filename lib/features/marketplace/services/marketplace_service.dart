@@ -9,7 +9,7 @@ import '../models/product_model.dart';
 class MarketplaceService {
   final ApiClient apiClient;
   final ImagePicker _imagePicker = ImagePicker();
-  
+
   // Enable mock mode for testing (set to false when backend is ready)
   static const bool useMockMarketplace = true;
 
@@ -35,7 +35,8 @@ class MarketplaceService {
         name: 'Laptop Gaming ASUS ROG',
         price: 15000000.0,
         imageUrl: 'https://via.placeholder.com/300x300?text=Laptop+Gaming',
-        description: 'Laptop gaming performa tinggi dengan prosesor Intel Core i9 dan GPU RTX 4090. Sempurna untuk gaming dan rendering video.',
+        description:
+            'Laptop gaming performa tinggi dengan prosesor Intel Core i9 dan GPU RTX 4090. Sempurna untuk gaming dan rendering video.',
         category: 'Elektronik',
         rating: 4.8,
         reviewCount: 156,
@@ -46,7 +47,8 @@ class MarketplaceService {
         name: 'Smartphone Flagship 5G',
         price: 8999000.0,
         imageUrl: 'https://via.placeholder.com/300x300?text=Smartphone',
-        description: 'Smartphone flagship dengan layar 6.7" AMOLED 120Hz, kamera 200MP, dan baterai 5000mAh.',
+        description:
+            'Smartphone flagship dengan layar 6.7" AMOLED 120Hz, kamera 200MP, dan baterai 5000mAh.',
         category: 'Elektronik',
         rating: 4.7,
         reviewCount: 243,
@@ -57,7 +59,8 @@ class MarketplaceService {
         name: 'Earbuds Wireless Premium',
         price: 1200000.0,
         imageUrl: 'https://via.placeholder.com/300x300?text=Earbuds',
-        description: 'True wireless earbuds dengan noise cancellation aktif, 8 jam battery life per charge.',
+        description:
+            'True wireless earbuds dengan noise cancellation aktif, 8 jam battery life per charge.',
         category: 'Aksesoris',
         rating: 4.5,
         reviewCount: 89,
@@ -68,7 +71,8 @@ class MarketplaceService {
         name: 'Kemeja Premium Cotton',
         price: 250000.0,
         imageUrl: 'https://via.placeholder.com/300x300?text=Kemeja',
-        description: 'Kemeja pria premium dari katun 100% berkualitas tinggi. Tersedia dalam berbagai ukuran dan warna.',
+        description:
+            'Kemeja pria premium dari katun 100% berkualitas tinggi. Tersedia dalam berbagai ukuran dan warna.',
         category: 'Fashion',
         rating: 4.6,
         reviewCount: 142,
@@ -79,7 +83,8 @@ class MarketplaceService {
         name: 'Kopi Specialty Arabica',
         price: 85000.0,
         imageUrl: 'https://via.placeholder.com/300x300?text=Kopi',
-        description: 'Kopi specialty arabica pilihan dari berbagai region dengan roasting yang sempurna. Berat bersih 500g.',
+        description:
+            'Kopi specialty arabica pilihan dari berbagai region dengan roasting yang sempurna. Berat bersih 500g.',
         category: 'Makanan',
         rating: 4.9,
         reviewCount: 267,
@@ -87,7 +92,10 @@ class MarketplaceService {
       ),
     ];
 
-    return GetProductsResponse(products: mockProducts, total: mockProducts.length);
+    return GetProductsResponse(
+      products: mockProducts,
+      total: mockProducts.length,
+    );
   }
 
   /// Real API get products

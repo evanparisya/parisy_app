@@ -29,7 +29,7 @@ class ProfileController extends ChangeNotifier {
 
       // Get current user from AuthController
       _user = authController.currentUser;
-      
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -51,11 +51,7 @@ class ProfileController extends ChangeNotifier {
       notifyListeners();
 
       if (_user != null) {
-        _user = _user!.copyWith(
-          name: name,
-          phone: phone,
-          address: address,
-        );
+        _user = _user!.copyWith(name: name, phone: phone, address: address);
       }
 
       _isLoading = false;

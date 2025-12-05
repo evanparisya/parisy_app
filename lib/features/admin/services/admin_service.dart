@@ -129,9 +129,11 @@ class AdminService {
     if (useMockAdmin) {
       await Future.delayed(Duration(milliseconds: 500));
       return _mockUsers
-          .where((user) =>
-              user.name.toLowerCase().contains(query.toLowerCase()) ||
-              user.email.toLowerCase().contains(query.toLowerCase()))
+          .where(
+            (user) =>
+                user.name.toLowerCase().contains(query.toLowerCase()) ||
+                user.email.toLowerCase().contains(query.toLowerCase()),
+          )
           .toList();
     }
     throw Exception('API not implemented');
@@ -185,9 +187,11 @@ class AdminService {
     if (useMockAdmin) {
       await Future.delayed(Duration(milliseconds: 500));
       return _mockProducts
-          .where((product) =>
-              product.name.toLowerCase().contains(query.toLowerCase()) ||
-              product.description.toLowerCase().contains(query.toLowerCase()))
+          .where(
+            (product) =>
+                product.name.toLowerCase().contains(query.toLowerCase()) ||
+                product.description.toLowerCase().contains(query.toLowerCase()),
+          )
           .toList();
     }
     throw Exception('API not implemented');

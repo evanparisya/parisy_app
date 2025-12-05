@@ -7,7 +7,7 @@ import '../models/order_model.dart';
 /// Demonstrates: Async ⏳ + RestAPI 🌐 + Stream 🌊 + JSON 📄
 class OrderService {
   final ApiClient apiClient;
-  
+
   // Enable mock mode for testing (set to false when backend is ready)
   static const bool useMockOrders = true;
 
@@ -40,7 +40,7 @@ class OrderService {
             productName: 'Laptop Gaming ASUS ROG',
             quantity: 1,
             productPrice: 15000000.0,
-          )
+          ),
         ],
         address: 'Jl. Merdeka No. 123, Jakarta',
         phoneNumber: '081234567890',
@@ -115,7 +115,7 @@ class OrderService {
             productName: 'Laptop Gaming ASUS ROG',
             quantity: 1,
             productPrice: 15000000.0,
-          )
+          ),
         ],
         address: 'Jl. Merdeka No. 123, Jakarta',
         phoneNumber: '081234567890',
@@ -141,8 +141,7 @@ class OrderService {
       ),
     };
 
-    return mockOrders[orderId] ??
-        (throw Exception('Order not found'));
+    return mockOrders[orderId] ?? (throw Exception('Order not found'));
   }
 
   /// Real API get order by ID

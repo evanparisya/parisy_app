@@ -6,7 +6,7 @@ import '../models/cart_model.dart';
 /// Demonstrates: Async ⏳ + RestAPI 🌐 + JSON 📄
 class CartService {
   final ApiClient apiClient;
-  
+
   // Enable mock mode for testing (set to false when backend is ready)
   static const bool useMockCart = true;
 

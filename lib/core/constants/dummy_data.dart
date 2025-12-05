@@ -84,7 +84,7 @@ class DummyData {
           'productName': 'Laptop Gaming ASUS ROG',
           'quantity': 1,
           'price': 15000000.0,
-        }
+        },
       ],
       'address': 'Jl. Merdeka No. 123, Jakarta Pusat',
       'phone': '081234567890',
@@ -109,7 +109,7 @@ class DummyData {
           'productName': 'Earbuds Wireless Premium',
           'quantity': 1,
           'price': 1200000.0,
-        }
+        },
       ],
       'address': 'Jl. Gatot Subroto No. 456, Jakarta Selatan',
       'phone': '081234567891',
@@ -134,7 +134,7 @@ class DummyData {
           'productName': 'Kopi Specialty Arabica',
           'quantity': 1,
           'price': 85000.0,
-        }
+        },
       ],
       'address': 'Jl. Sudirman No. 789, Jakarta Pusat',
       'phone': '081234567892',

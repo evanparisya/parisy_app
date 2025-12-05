@@ -56,7 +56,7 @@ class MarketplaceController extends ChangeNotifier {
   /// Load more products (pagination)
   Future<void> loadMoreProducts() async {
     if (_state == MarketplaceState.loading) return;
-    
+
     try {
       _state = MarketplaceState.loading;
       final response = await marketplaceService.getProducts();

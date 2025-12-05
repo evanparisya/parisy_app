@@ -34,7 +34,9 @@ class AdminProductModel {
       imageUrl: json['imageUrl'],
       sellerEmail: json['sellerEmail'],
       createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
     );
   }
 

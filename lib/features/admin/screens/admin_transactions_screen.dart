@@ -8,7 +8,8 @@ class AdminTransactionsScreen extends StatefulWidget {
   const AdminTransactionsScreen({Key? key}) : super(key: key);
 
   @override
-  State<AdminTransactionsScreen> createState() => _AdminTransactionsScreenState();
+  State<AdminTransactionsScreen> createState() =>
+      _AdminTransactionsScreenState();
 }
 
 class _AdminTransactionsScreenState extends State<AdminTransactionsScreen> {
@@ -97,7 +98,9 @@ class _AdminTransactionsScreenState extends State<AdminTransactionsScreen> {
                     isSelected: _selectedFilter == 'purchase',
                     onTap: () {
                       setState(() => _selectedFilter = 'purchase');
-                      context.read<AdminController>().getTransactionsByType('purchase');
+                      context.read<AdminController>().getTransactionsByType(
+                        'purchase',
+                      );
                     },
                   ),
                   SizedBox(width: 8),
@@ -106,7 +109,9 @@ class _AdminTransactionsScreenState extends State<AdminTransactionsScreen> {
                     isSelected: _selectedFilter == 'wallet_topup',
                     onTap: () {
                       setState(() => _selectedFilter = 'wallet_topup');
-                      context.read<AdminController>().getTransactionsByType('wallet_topup');
+                      context.read<AdminController>().getTransactionsByType(
+                        'wallet_topup',
+                      );
                     },
                   ),
                   SizedBox(width: 8),
@@ -115,7 +120,9 @@ class _AdminTransactionsScreenState extends State<AdminTransactionsScreen> {
                     isSelected: _selectedFilter == 'refund',
                     onTap: () {
                       setState(() => _selectedFilter = 'refund');
-                      context.read<AdminController>().getTransactionsByType('refund');
+                      context.read<AdminController>().getTransactionsByType(
+                        'refund',
+                      );
                     },
                   ),
                 ],
@@ -132,9 +139,7 @@ class _AdminTransactionsScreenState extends State<AdminTransactionsScreen> {
                 }
 
                 if (adminController.transactions.isEmpty) {
-                  return Center(
-                    child: Text('Tidak ada transaksi'),
-                  );
+                  return Center(child: Text('Tidak ada transaksi'));
                 }
 
                 return ListView.builder(
@@ -158,7 +163,10 @@ class _AdminTransactionsScreenState extends State<AdminTransactionsScreen> {
     );
   }
 
-  void _showTransactionDetail(BuildContext context, AdminTransactionModel transaction) {
+  void _showTransactionDetail(
+    BuildContext context,
+    AdminTransactionModel transaction,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -173,8 +181,14 @@ class _AdminTransactionsScreenState extends State<AdminTransactionsScreen> {
               _DetailRow('Email', transaction.userEmail),
               _DetailRow('Tipe', transaction.type),
               _DetailRow('Status', transaction.status),
-              _DetailRow('Jumlah', 'Rp ${transaction.amount.toStringAsFixed(0)}'),
-              _DetailRow('Tanggal', transaction.createdAt.toString().split('.')[0]),
+              _DetailRow(
+                'Jumlah',
+                'Rp ${transaction.amount.toStringAsFixed(0)}',
+              ),
+              _DetailRow(
+                'Tanggal',
+                transaction.createdAt.toString().split('.')[0],
+              ),
               if (transaction.description != null)
                 _DetailRow('Deskripsi', transaction.description!),
             ],
@@ -207,18 +221,24 @@ class _FilterButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected ? Color(AppColors.primaryGreen) : Color(AppColors.neutralGray),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Color(AppColors.primaryGreen)
+              : Color(AppColors.neutralGray),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-                color: isSelected ? Color(AppColors.primaryGreen) : Color(AppColors.neutralGray),
+            color: isSelected
+                ? Color(AppColors.primaryGreen)
+                : Color(AppColors.neutralGray),
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Color(AppColors.neutralWhite) : Color(AppColors.neutralDarkGray),
+            color: isSelected
+                ? Color(AppColors.neutralWhite)
+                : Color(AppColors.neutralDarkGray),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -232,10 +252,7 @@ class _TransactionCard extends StatelessWidget {
   final AdminTransactionModel transaction;
   final VoidCallback onTap;
 
-  const _TransactionCard({
-    required this.transaction,
-    required this.onTap,
-  });
+  const _TransactionCard({required this.transaction, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -247,10 +264,7 @@ class _TransactionCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Color(AppColors.neutralWhite),
           borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Color(AppColors.neutralGray),
-            width: 1,
-          ),
+          border: Border.all(color: Color(AppColors.neutralGray), width: 1),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,11 +275,7 @@ class _TransactionCard extends StatelessWidget {
                 color: _getTypeColor().withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                _getTypeIcon(),
-                color: _getTypeColor(),
-                size: 20,
-              ),
+              child: Icon(_getTypeIcon(), color: _getTypeColor(), size: 20),
             ),
             SizedBox(width: 12),
             Expanded(
@@ -315,7 +325,10 @@ class _TransactionCard extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: _getStatusColor().withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),

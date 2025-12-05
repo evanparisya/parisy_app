@@ -178,9 +178,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => AdminUsersScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => AdminUsersScreen()),
                 );
               },
             ),
@@ -243,18 +241,11 @@ class _StatisticCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Color(AppColors.neutralWhite),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Color(color).withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Color(color).withOpacity(0.2), width: 1),
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: Color(color),
-            size: 28,
-          ),
+          Icon(icon, color: Color(color), size: 28),
           SizedBox(height: 8),
           Text(
             value,
@@ -301,10 +292,7 @@ class _AdminMenuButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Color(AppColors.neutralWhite),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Color(color).withOpacity(0.2),
-            width: 2,
-          ),
+          border: Border.all(color: Color(color).withOpacity(0.2), width: 2),
         ),
         child: Row(
           children: [
@@ -314,11 +302,7 @@ class _AdminMenuButton extends StatelessWidget {
                 color: Color(color).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                color: Color(color),
-                size: 24,
-              ),
+              child: Icon(icon, color: Color(color), size: 24),
             ),
             SizedBox(width: 16),
             Expanded(
@@ -344,11 +328,7 @@ class _AdminMenuButton extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Color(color),
-              size: 16,
-            ),
+            Icon(Icons.arrow_forward_ios, color: Color(color), size: 16),
           ],
         ),
       ),

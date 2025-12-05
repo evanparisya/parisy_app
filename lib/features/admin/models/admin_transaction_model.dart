@@ -34,7 +34,9 @@ class AdminTransactionModel {
       status: json['status'],
       description: json['description'],
       createdAt: DateTime.parse(json['createdAt']),
-      completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt']) : null,
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'])
+          : null,
     );
   }
 

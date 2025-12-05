@@ -83,7 +83,7 @@ class AppColors {
   static const int errorRed = 0xFFEF4444;
   static const int warningYellow = 0xFFFCD34D;
   static const int infoBlue = 0xFF3B82F6;
-  
+
   // Order Status Colors
   static const int statusPending = 0xFFFFC107; // Amber/Warning
   static const int statusProcessing = 0xFF2196F3; // Blue/Info

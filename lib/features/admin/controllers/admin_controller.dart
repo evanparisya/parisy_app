@@ -14,10 +14,10 @@ class AdminController extends ChangeNotifier {
 
   // Users/Residents
   List<AdminUserModel> _users = [];
-  
+
   // Products
   List<AdminProductModel> _products = [];
-  
+
   // Transactions
   List<AdminTransactionModel> _transactions = [];
   double _totalTransactions = 0;

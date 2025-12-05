@@ -27,7 +27,9 @@ class ApiClient {
         },
         onResponse: (response, handler) {
           // Print response
-          print('RESPONSE: ${response.statusCode} ${response.requestOptions.path}');
+          print(
+            'RESPONSE: ${response.statusCode} ${response.requestOptions.path}',
+          );
           return handler.next(response);
         },
         onError: (error, handler) {

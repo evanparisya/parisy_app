@@ -51,9 +51,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           }
 
           if (orderController.orders.isEmpty) {
-            return EmptyStateWidget(
-              message: 'Belum ada pesanan',
-            );
+            return EmptyStateWidget(message: 'Belum ada pesanan');
           }
 
           return ListView.builder(
