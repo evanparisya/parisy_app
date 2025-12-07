@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/common_widgets.dart';
 import '../controllers/admin_controller.dart';
 import '../../../features/auth/controllers/auth_controller.dart';
 import 'admin_users_screen.dart';
@@ -51,25 +52,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ),
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'logout') {
-                context.read<AuthController>().logout();
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, color: Color(AppColors.errorRed)),
-                    SizedBox(width: 12),
-                    Text('Logout'),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          ProfileAppBarAction(),
         ],
       ),
       body: SingleChildScrollView(

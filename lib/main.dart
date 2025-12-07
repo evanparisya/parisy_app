@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/constants/app_constants.dart';
+import 'core/widgets/common_widgets.dart';
 import 'features/auth/controllers/auth_controller.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/admin/screens/admin_dashboard_screen.dart';
@@ -37,6 +38,7 @@ class MyApp extends StatelessWidget {
         routes: {
           '/login': (context) => LoginScreen(),
           '/cart': (context) => MainNavigationApp(initialIndex: 2),
+          '/profile': (context) => ProfileScreen(),
         },
         home: const RootApp(),
       ),
@@ -54,7 +56,7 @@ class RootApp extends StatelessWidget {
         if (authController.isAuthenticated) {
           // Check role: ADMIN, RT, atau RW
           final role = authController.currentUser?.role;
-          final isManagement = role == 'ADMIN' || role == 'RT' || role == 'RW'; 
+          final isManagement = role == 'ADMIN' || role == 'RT' || role == 'RW';
 
           if (isManagement) {
             return AdminDashboardScreen();
@@ -85,7 +87,7 @@ class _MainNavigationAppState extends State<MainNavigationApp> {
     const OrderHistoryScreen(),
     const CartScreen(),
   ];
-  
+
   @override
   void initState() {
     super.initState();
@@ -168,28 +170,8 @@ class _MainNavigationAppState extends State<MainNavigationApp> {
                       ],
                     ),
                   ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'profile') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ProfileScreen(),
-                          ),
-                        );
-                      } else if (value == 'logout') {
-                        context.read<AuthController>().logout();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(value: 'profile', child: Text('Profile')),
-                      PopupMenuItem(value: 'logout', child: Text('Logout')),
-                    ],
-                    child: Icon(
-                      Icons.account_circle,
-                      color: Color(AppColors.neutralWhite),
-                    ),
-                  ),
+                  // Profile action (visible as an icon on the AppBar)
+                  ProfileAppBarAction(iconColor: Color(AppColors.neutralWhite)),
                 ],
               );
             },

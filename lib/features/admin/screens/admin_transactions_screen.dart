@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/common_widgets.dart';
 import '../controllers/admin_controller.dart';
 import '../models/admin_transaction_model.dart';
 
@@ -35,6 +36,9 @@ class _AdminTransactionsScreenState extends State<AdminTransactionsScreen> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          ProfileAppBarAction(),
+        ],
       ),
       body: Column(
         children: [

@@ -60,6 +60,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          ProfileAppBarAction(),
+        ],
       ),
       body: Consumer<MarketplaceController>(
         builder: (context, controller, child) {

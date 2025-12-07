@@ -46,6 +46,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          ProfileAppBarAction(),
+        ],
       ),
       body: Column(
         children: [

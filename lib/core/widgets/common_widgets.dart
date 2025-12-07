@@ -257,3 +257,23 @@ class EmptyStateWidget extends StatelessWidget {
     );
   }
 }
+
+/// Profile action for AppBar: navigates to profile route
+class ProfileAppBarAction extends StatelessWidget {
+  final Color? iconColor;
+
+  const ProfileAppBarAction({Key? key, this.iconColor}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(
+        Icons.account_circle,
+        color: iconColor ?? Color(AppColors.neutralBlack),
+      ),
+      onPressed: () {
+        Navigator.pushNamed(context, '/profile');
+      },
+    );
+  }
+}

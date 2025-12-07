@@ -34,6 +34,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          ProfileAppBarAction(),
+        ],
       ),
       body: Consumer<OrderController>(
         builder: (context, orderController, child) {
@@ -225,6 +228,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          ProfileAppBarAction(),
+        ],
       ),
       body: Consumer<OrderController>(
         builder: (context, orderController, child) {

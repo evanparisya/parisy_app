@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../controllers/profile_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -280,9 +281,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               TextButton(
                                 onPressed: () async {
-                                  await context
-                                      .read<ProfileController>()
-                                      .logout();
+                                  // Call AuthController.logout directly to avoid
+                                  // using ProfileController after it may be disposed
+                                  await context.read<AuthController>().logout();
                                   if (mounted) {
                                     Navigator.pushNamedAndRemoveUntil(
                                       context,

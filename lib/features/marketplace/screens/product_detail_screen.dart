@@ -37,6 +37,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          ProfileAppBarAction(),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

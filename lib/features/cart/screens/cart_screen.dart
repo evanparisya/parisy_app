@@ -46,6 +46,9 @@ class _CartScreenState extends State<CartScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          ProfileAppBarAction(),
+        ],
       ),
       body: Consumer<CartController>(
         builder: (context, cartController, child) {

@@ -44,6 +44,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          ProfileAppBarAction(),
+        ],
       ),
       body: Column(
         children: [
