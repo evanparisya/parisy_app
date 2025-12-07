@@ -22,12 +22,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     Future.microtask(() {
       context.read<AdminController>().loadUsers();
       context.read<AdminController>().loadProducts();
-      context.read<AdminController>().loadTransactions();
+      // Transaksi hanya diload jika admin penuh
+      final role = context.read<AuthController>().currentUser?.role;
+      if (role == 'ADMIN') {
+        context.read<AdminController>().loadTransactions();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = context.read<AuthController>().currentUser;
+    final role = currentUser?.role;
+    final isFullAdmin = role == 'ADMIN';
+    final isRTRW = role == 'RT' || role == 'RW'; 
+
     return Scaffold(
       backgroundColor: Color(AppColors.neutralWhite),
       appBar: AppBar(
@@ -69,55 +78,51 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Welcome section
-            Consumer<AuthController>(
-              builder: (context, authController, _) {
-                return Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Color(AppColors.primaryGreen),
-                    borderRadius: BorderRadius.circular(12),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Color(AppColors.primaryGreen),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Color(AppColors.neutralWhite),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.admin_panel_settings,
+                      color: Color(AppColors.primaryGreen),
+                      size: 32,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Color(AppColors.neutralWhite),
-                          shape: BoxShape.circle,
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Selamat datang, ${role ?? 'Pengguna'}!',
+                          style: TextStyle(
+                            color: Color(AppColors.neutralWhite),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.admin_panel_settings,
-                          color: Color(AppColors.primaryGreen),
-                          size: 32,
+                        Text(
+                          currentUser?.name ?? 'Pengguna',
+                          style: TextStyle(
+                            color: Color(AppColors.neutralWhite),
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Selamat datang, Admin!',
-                              style: TextStyle(
-                                color: Color(AppColors.neutralWhite),
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              authController.currentUser?.name ?? 'Admin',
-                              style: TextStyle(
-                                color: Color(AppColors.neutralWhite),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
             SizedBox(height: 24),
 
@@ -144,14 +149,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                     ),
                     SizedBox(width: 12),
-                    Expanded(
-                      child: _StatisticCard(
-                        title: 'Transaksi',
-                        value: adminController.transactions.length.toString(),
-                        icon: Icons.receipt,
-                        color: 0xFF8B5CF6,
+                    // Hanya tampilkan Total Transaksi jika Admin Penuh
+                    if (isFullAdmin)
+                      Expanded(
+                        child: _StatisticCard(
+                          title: 'Transaksi',
+                          value: adminController.transactions.length.toString(),
+                          icon: Icons.receipt,
+                          color: 0xFF8B5CF6,
+                        ),
                       ),
-                    ),
                   ],
                 );
               },
@@ -160,7 +167,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
             // Admin Menu section
             Text(
-              'Menu Admin',
+              'Menu ${isFullAdmin ? 'Admin' : 'Manajemen'}', 
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -169,51 +176,58 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
             SizedBox(height: 12),
 
-            // Admin menu items
-            _AdminMenuButton(
-              icon: Icons.people,
-              title: 'Kelola Warga',
-              subtitle: 'Lihat, tambah, edit, hapus warga',
-              color: 0xFF3B82F6,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AdminUsersScreen()),
-                );
-              },
-            ),
+            // Kelola Warga (Read access for RT/RW)
+            if (isFullAdmin || isRTRW) 
+              _AdminMenuButton(
+                icon: Icons.people,
+                title: 'Kelola Warga',
+                subtitle: isFullAdmin
+                    ? 'Lihat, tambah, edit, hapus warga'
+                    : 'Lihat data warga (Read Only)', 
+                color: 0xFF3B82F6,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AdminUsersScreen()),
+                  );
+                },
+              ),
             SizedBox(height: 12),
 
-            _AdminMenuButton(
-              icon: Icons.shopping_bag,
-              title: 'Kelola Barang',
-              subtitle: 'CRUD barang, cari, upload foto',
-              color: 0xFFEC4899,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AdminProductsScreen(),
-                  ),
-                );
-              },
-            ),
+            // Kelola Barang (CRUD access for RT/RW)
+            if (isFullAdmin || isRTRW) 
+              _AdminMenuButton(
+                icon: Icons.shopping_bag,
+                title: 'Kelola Barang Jual Beli', 
+                subtitle: 'CRUD barang, cari, upload foto',
+                color: 0xFFEC4899,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AdminProductsScreen(),
+                    ),
+                  );
+                },
+              ),
             SizedBox(height: 12),
 
-            _AdminMenuButton(
-              icon: Icons.receipt,
-              title: 'Kelola Transaksi',
-              subtitle: 'Lihat riwayat transaksi & uang',
-              color: 0xFF8B5CF6,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AdminTransactionsScreen(),
-                  ),
-                );
-              },
-            ),
+            // Kelola Transaksi (Only for Admin)
+            if (isFullAdmin) 
+              _AdminMenuButton(
+                icon: Icons.receipt,
+                title: 'Kelola Transaksi',
+                subtitle: 'Lihat riwayat transaksi & uang',
+                color: 0xFF8B5CF6,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AdminTransactionsScreen(),
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ),

@@ -48,7 +48,7 @@ dependencies:
   image_picker: ^1.0.4
 
   # Camera Plugin (untuk real-time camera)
-  camera: ^0.10.5+5
+  camera: ^0.11.0
 
   # Http Client (alternative)
   http: ^1.1.0

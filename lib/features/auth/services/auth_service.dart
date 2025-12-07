@@ -32,6 +32,7 @@ class AuthService {
     // Simulate network delay
     await Future.delayed(Duration(seconds: 2));
 
+    // --- Akun Utama ---
     // Check admin credentials
     if (email == 'admin@gmail.com' && password == 'password') {
       return AuthResponse(
@@ -44,12 +45,49 @@ class AuthService {
           phone: '081234567890',
           address: 'Jakarta, Indonesia',
           createdAt: DateTime.now(),
+          role: 'ADMIN', 
         ),
         token: 'mock_token_admin_${DateTime.now().millisecondsSinceEpoch}',
       );
     }
+    
+    // 2. KETUA RT (Manajemen)
+    if (email == 'rt@gmail.com' && password == 'password') {
+      return AuthResponse(
+        success: true,
+        message: 'Login berhasil sebagai Ketua RT',
+        user: UserModel(
+          id: 'USER-RT-001',
+          name: 'Ketua RT 01',
+          email: email,
+          phone: '081234567891',
+          address: 'Jakarta, Sektor RT',
+          createdAt: DateTime.now(),
+          role: 'RT', // ROLE BARU
+        ),
+        token: 'mock_token_rt_${DateTime.now().millisecondsSinceEpoch}',
+      );
+    }
 
-    // Check user credentials
+    // 3. KETUA RW (Manajemen)
+    if (email == 'rw@gmail.com' && password == 'password') {
+      return AuthResponse(
+        success: true,
+        message: 'Login berhasil sebagai Ketua RW',
+        user: UserModel(
+          id: 'USER-RW-001',
+          name: 'Ketua RW 05',
+          email: email,
+          phone: '081234567892',
+          address: 'Jakarta, Sektor RW',
+          createdAt: DateTime.now(),
+          role: 'RW', // ROLE BARU
+        ),
+        token: 'mock_token_rw_${DateTime.now().millisecondsSinceEpoch}',
+      );
+    }
+
+    // 4. USER BIASA (user@gmail.com)
     if (email == 'user@gmail.com' && password == 'password') {
       return AuthResponse(
         success: true,
@@ -61,30 +99,45 @@ class AuthService {
           phone: '081234567890',
           address: 'Jakarta, Indonesia',
           createdAt: DateTime.now(),
+          role: 'USER',
         ),
         token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
       );
     }
-
-    // Check other dummy accounts
-    final dummyAccounts = {
-      'user@example.com': 'password123',
-      'seller@example.com': 'seller123',
-    };
-
-    if (dummyAccounts.containsKey(email) && dummyAccounts[email] == password) {
+    
+    // 5. USER TEST (user@example.com)
+    if (email == 'user@example.com' && password == 'password123') {
       return AuthResponse(
         success: true,
         message: 'Login berhasil',
         user: UserModel(
-          id: 'USER-${DateTime.now().millisecondsSinceEpoch}',
-          name: email.split('@')[0].toUpperCase(),
+          id: 'USER-TEST-002',
+          name: 'USER TEST',
           email: email,
           phone: '081234567890',
           address: 'Jakarta, Indonesia',
           createdAt: DateTime.now(),
+          role: 'USER', 
         ),
-        token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
+        token: 'mock_token_test_${DateTime.now().millisecondsSinceEpoch}',
+      );
+    }
+    
+    // 6. SELLER TEST (seller@example.com)
+    if (email == 'seller@example.com' && password == 'seller123') {
+      return AuthResponse(
+        success: true,
+        message: 'Login berhasil',
+        user: UserModel(
+          id: 'SELLER-TEST-003',
+          name: 'SELLER TEST',
+          email: email,
+          phone: '081234567890',
+          address: 'Jakarta, Indonesia',
+          createdAt: DateTime.now(),
+          role: 'SELLER', 
+        ),
+        token: 'mock_token_seller_${DateTime.now().millisecondsSinceEpoch}',
       );
     }
 
@@ -156,6 +209,7 @@ class AuthService {
         phone: '081234567890',
         address: 'Jakarta, Indonesia',
         createdAt: DateTime.now(),
+        role: 'USER', 
       ),
       token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
     );

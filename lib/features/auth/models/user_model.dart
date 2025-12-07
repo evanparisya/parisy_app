@@ -6,6 +6,7 @@ class UserModel {
   final String? phone;
   final String? address;
   final DateTime? createdAt;
+  final String? role; // [WAJIB: Field role]
 
   UserModel({
     required this.id,
@@ -14,6 +15,7 @@ class UserModel {
     this.phone,
     this.address,
     this.createdAt,
+    this.role,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class UserModel {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'].toString())
           : null,
+      role: json['role'],
     );
   }
 
@@ -37,6 +40,7 @@ class UserModel {
       'phone': phone,
       'address': address,
       'created_at': createdAt?.toIso8601String(),
+      'role': role,
     };
   }
 
@@ -47,6 +51,7 @@ class UserModel {
     String? phone,
     String? address,
     DateTime? createdAt,
+    String? role,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -55,6 +60,7 @@ class UserModel {
       phone: phone ?? this.phone,
       address: address ?? this.address,
       createdAt: createdAt ?? this.createdAt,
+      role: role ?? this.role,
     );
   }
 }

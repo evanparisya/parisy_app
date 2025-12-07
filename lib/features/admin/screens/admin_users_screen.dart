@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../auth/controllers/auth_controller.dart'; 
 import '../controllers/admin_controller.dart';
 import '../models/admin_user_model.dart';
 
@@ -32,12 +33,15 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final role = context.read<AuthController>().currentUser?.role; 
+    final isFullAdmin = role == 'ADMIN'; 
+
     return Scaffold(
       backgroundColor: Color(AppColors.neutralWhite),
       appBar: AppBar(
         backgroundColor: Color(AppColors.primaryGreen),
         elevation: 0,
-        title: Text('Kelola Warga'),
+        title: Text(isFullAdmin ? 'Kelola Warga' : 'Data Warga (Read Only)'), 
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -88,11 +92,18 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                     return _UserCard(
                       user: user,
                       onEdit: () {
-                        _showUserDialog(context, user);
+                        // Hanya panggil dialog jika Admin Penuh
+                        if (isFullAdmin) { 
+                          _showUserDialog(context, user);
+                        }
                       },
                       onDelete: () {
-                        _showDeleteDialog(context, user.id);
+                        // Hanya panggil dialog jika Admin Penuh
+                        if (isFullAdmin) { 
+                          _showDeleteDialog(context, user.id);
+                        }
                       },
+                      isReadOnly: !isFullAdmin, // [MODIFIED: Kirim flag Read Only]
                     );
                   },
                 );
@@ -101,13 +112,16 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Color(AppColors.primaryGreen),
-        onPressed: () {
-          _showUserDialog(context, null);
-        },
-        child: Icon(Icons.add),
-      ),
+      // Tombol Tambah hanya untuk Admin Penuh
+      floatingActionButton: isFullAdmin
+          ? FloatingActionButton( 
+              backgroundColor: Color(AppColors.primaryGreen),
+              onPressed: () {
+                _showUserDialog(context, null);
+              },
+              child: Icon(Icons.add),
+            )
+          : null, // [MODIFIED: Sembunyikan tombol]
     );
   }
 
@@ -149,11 +163,13 @@ class _UserCard extends StatelessWidget {
   final AdminUserModel user;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final bool isReadOnly; 
 
   const _UserCard({
     required this.user,
     required this.onEdit,
     required this.onDelete,
+    this.isReadOnly = false,
   });
 
   @override
@@ -194,21 +210,23 @@ class _UserCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.edit,
-                      color: Color(AppColors.primaryGreen),
+              // Tombol Edit/Delete hanya ditampilkan jika tidak Read Only
+              if (!isReadOnly) 
+                Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.edit,
+                        color: Color(AppColors.primaryGreen),
+                      ),
+                      onPressed: onEdit,
                     ),
-                    onPressed: onEdit,
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.delete, color: Color(AppColors.errorRed)),
-                    onPressed: onDelete,
-                  ),
-                ],
-              ),
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Color(AppColors.errorRed)),
+                      onPressed: onDelete,
+                    ),
+                  ],
+                ),
             ],
           ),
           SizedBox(height: 8),
