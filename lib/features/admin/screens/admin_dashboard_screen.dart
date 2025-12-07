@@ -36,7 +36,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final currentUser = context.read<AuthController>().currentUser;
     final role = currentUser?.role;
     final isFullAdmin = role == 'ADMIN';
-    final isRTRW = role == 'RT' || role == 'RW'; 
+    final isRTRW = role == 'RT' || role == 'RW';
 
     return Scaffold(
       backgroundColor: Color(AppColors.neutralWhite),
@@ -51,9 +51,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          ProfileAppBarAction(),
-        ],
+        actions: [ProfileAppBarAction()],
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -150,7 +148,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
             // Admin Menu section
             Text(
-              'Menu ${isFullAdmin ? 'Admin' : 'Manajemen'}', 
+              'Menu ${isFullAdmin ? 'Admin' : 'Manajemen'}',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -160,13 +158,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             SizedBox(height: 12),
 
             // Kelola Warga (Read access for RT/RW)
-            if (isFullAdmin || isRTRW) 
+            if (isFullAdmin || isRTRW)
               _AdminMenuButton(
                 icon: Icons.people,
                 title: 'Kelola Warga',
                 subtitle: isFullAdmin
                     ? 'Lihat, tambah, edit, hapus warga'
-                    : 'Lihat data warga (Read Only)', 
+                    : 'Lihat data warga (Read Only)',
                 color: 0xFF3B82F6,
                 onTap: () {
                   Navigator.push(
@@ -178,10 +176,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             SizedBox(height: 12),
 
             // Kelola Barang (CRUD access for RT/RW)
-            if (isFullAdmin || isRTRW) 
+            if (isFullAdmin || isRTRW)
               _AdminMenuButton(
                 icon: Icons.shopping_bag,
-                title: 'Kelola Barang Jual Beli', 
+                title: 'Kelola Barang Jual Beli',
                 subtitle: 'CRUD barang, cari, upload foto',
                 color: 0xFFEC4899,
                 onTap: () {
@@ -196,7 +194,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             SizedBox(height: 12),
 
             // Kelola Transaksi (Only for Admin)
-            if (isFullAdmin) 
+            if (isFullAdmin)
               _AdminMenuButton(
                 icon: Icons.receipt,
                 title: 'Kelola Transaksi',

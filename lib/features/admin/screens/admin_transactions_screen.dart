@@ -36,9 +36,7 @@ class _AdminTransactionsScreenState extends State<AdminTransactionsScreen> {
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          ProfileAppBarAction(),
-        ],
+        actions: [ProfileAppBarAction()],
       ),
       body: Column(
         children: [

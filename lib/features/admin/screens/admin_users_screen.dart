@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/common_widgets.dart';
-import '../../auth/controllers/auth_controller.dart'; 
+import '../../auth/controllers/auth_controller.dart';
 import '../controllers/admin_controller.dart';
 import '../models/admin_user_model.dart';
 
@@ -33,22 +33,20 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final role = context.read<AuthController>().currentUser?.role; 
-    final isFullAdmin = role == 'ADMIN'; 
+    final role = context.read<AuthController>().currentUser?.role;
+    final isFullAdmin = role == 'ADMIN';
 
     return Scaffold(
       backgroundColor: Color(AppColors.neutralWhite),
       appBar: AppBar(
         backgroundColor: Color(AppColors.primaryGreen),
         elevation: 0,
-        title: Text(isFullAdmin ? 'Kelola Warga' : 'Data Warga (Read Only)'), 
+        title: Text(isFullAdmin ? 'Kelola Warga' : 'Data Warga (Read Only)'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          ProfileAppBarAction(),
-        ],
+        actions: [ProfileAppBarAction()],
       ),
       body: Column(
         children: [
@@ -96,17 +94,18 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                       user: user,
                       onEdit: () {
                         // Hanya panggil dialog jika Admin Penuh
-                        if (isFullAdmin) { 
+                        if (isFullAdmin) {
                           _showUserDialog(context, user);
                         }
                       },
                       onDelete: () {
                         // Hanya panggil dialog jika Admin Penuh
-                        if (isFullAdmin) { 
+                        if (isFullAdmin) {
                           _showDeleteDialog(context, user.id);
                         }
                       },
-                      isReadOnly: !isFullAdmin, // [MODIFIED: Kirim flag Read Only]
+                      isReadOnly:
+                          !isFullAdmin, // [MODIFIED: Kirim flag Read Only]
                     );
                   },
                 );
@@ -117,7 +116,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       ),
       // Tombol Tambah hanya untuk Admin Penuh
       floatingActionButton: isFullAdmin
-          ? FloatingActionButton( 
+          ? FloatingActionButton(
               backgroundColor: Color(AppColors.primaryGreen),
               onPressed: () {
                 _showUserDialog(context, null);
@@ -166,7 +165,7 @@ class _UserCard extends StatelessWidget {
   final AdminUserModel user;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  final bool isReadOnly; 
+  final bool isReadOnly;
 
   const _UserCard({
     required this.user,
@@ -214,7 +213,7 @@ class _UserCard extends StatelessWidget {
                 ),
               ),
               // Tombol Edit/Delete hanya ditampilkan jika tidak Read Only
-              if (!isReadOnly) 
+              if (!isReadOnly)
                 Row(
                   children: [
                     IconButton(
@@ -225,7 +224,10 @@ class _UserCard extends StatelessWidget {
                       onPressed: onEdit,
                     ),
                     IconButton(
-                      icon: Icon(Icons.delete, color: Color(AppColors.errorRed)),
+                      icon: Icon(
+                        Icons.delete,
+                        color: Color(AppColors.errorRed),
+                      ),
                       onPressed: onDelete,
                     ),
                   ],
