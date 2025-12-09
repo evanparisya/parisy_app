@@ -1,5 +1,8 @@
+// lib/features/auth/services/auth_service.dart
 import 'package:dio/dio.dart';
-import '../../../core/api/api_client.dart';
+import 'package:parisy_app/core/api/api_client.dart';
+import 'package:parisy_app/core/constants/app_constants.dart';
+import 'package:parisy_app/core/constants/dummy_data.dart';
 import '../models/user_model.dart';
 
 class AuthService {
@@ -32,116 +35,38 @@ class AuthService {
     // Simulate network delay
     await Future.delayed(Duration(seconds: 2));
 
-    // --- Akun Utama ---
-    // Check admin credentials
-    if (email == 'admin@gmail.com' && password == 'password') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil',
-        user: UserModel(
-          id: 'ADMIN-001',
-          name: 'Admin Parisy',
-          email: email,
-          phone: '081234567890',
-          address: 'Jakarta, Indonesia',
-          createdAt: DateTime.now(),
-          role: 'ADMIN', 
-        ),
-        token: 'mock_token_admin_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    }
-    
-    // 2. KETUA RT (Manajemen)
-    if (email == 'rt@gmail.com' && password == 'password') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil sebagai Ketua RT',
-        user: UserModel(
-          id: 'USER-RT-001',
-          name: 'Ketua RT 01',
-          email: email,
-          phone: '081234567891',
-          address: 'Jakarta, Sektor RT',
-          createdAt: DateTime.now(),
-          role: 'RT', // ROLE BARU
-        ),
-        token: 'mock_token_rt_${DateTime.now().millisecondsSinceEpoch}',
-      );
+    final userMap = DummyData.mockUsers;
+    UserModel? mockUser;
+
+    // Menemukan user berdasarkan email
+    if (userMap.containsKey(email)) {
+      mockUser = userMap[email];
     }
 
-    // 3. KETUA RW (Manajemen)
-    if (email == 'rw@gmail.com' && password == 'password') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil sebagai Ketua RW',
-        user: UserModel(
-          id: 'USER-RW-001',
-          name: 'Ketua RW 05',
-          email: email,
-          phone: '081234567892',
-          address: 'Jakarta, Sektor RW',
-          createdAt: DateTime.now(),
-          role: 'RW', // ROLE BARU
-        ),
-        token: 'mock_token_rw_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    }
-
-    // 4. USER BIASA (user@gmail.com)
-    if (email == 'user@gmail.com' && password == 'password') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil',
-        user: UserModel(
-          id: 'USER-001',
-          name: 'User',
-          email: email,
-          phone: '081234567890',
-          address: 'Jakarta, Indonesia',
-          createdAt: DateTime.now(),
-          role: 'USER',
-        ),
-        token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-      );
+    // Cek password. Di mock, password diasumsikan 'password' untuk semua user manajemen, dan password yang unik untuk user/warga.
+    bool passwordMatch = false;
+    if (mockUser != null) {
+      if (mockUser.subRole != AppStrings.subRoleWarga && password == 'password') {
+        passwordMatch = true;
+      } else if (mockUser.email == 'warga@gmail.com' && password == 'password') {
+        // Asumsi password warga juga 'password' untuk kemudahan testing
+        passwordMatch = true;
+      } else if (mockUser.email == 'admin@gmail.com' && password == 'password') {
+        // Asumsi password admin juga 'password'
+        passwordMatch = true;
+      }
     }
     
-    // 5. USER TEST (user@example.com)
-    if (email == 'user@example.com' && password == 'password123') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil',
-        user: UserModel(
-          id: 'USER-TEST-002',
-          name: 'USER TEST',
-          email: email,
-          phone: '081234567890',
-          address: 'Jakarta, Indonesia',
-          createdAt: DateTime.now(),
-          role: 'USER', 
-        ),
-        token: 'mock_token_test_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    }
-    
-    // 6. SELLER TEST (seller@example.com)
-    if (email == 'seller@example.com' && password == 'seller123') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil',
-        user: UserModel(
-          id: 'SELLER-TEST-003',
-          name: 'SELLER TEST',
-          email: email,
-          phone: '081234567890',
-          address: 'Jakarta, Indonesia',
-          createdAt: DateTime.now(),
-          role: 'SELLER', 
-        ),
-        token: 'mock_token_seller_${DateTime.now().millisecondsSinceEpoch}',
-      );
+    if (mockUser == null || !passwordMatch) {
+        throw Exception('Email atau kata sandi salah');
     }
 
-    throw Exception('Email atau password salah');
+    return AuthResponse(
+      success: true,
+      message: 'Login berhasil',
+      user: mockUser,
+      token: 'mock_token_${mockUser.subRole}_${DateTime.now().millisecondsSinceEpoch}',
+    );
   }
 
   // Real API Login
@@ -160,7 +85,9 @@ class AuthService {
       if (response.statusCode == 200) {
         return AuthResponse.fromJson(response.data);
       } else {
-        throw Exception('Login failed');
+        // Cek jika response body memiliki pesan error
+        final message = response.data['message'] ?? 'Login gagal';
+        throw Exception(message);
       }
     } on DioException catch (e) {
       throw Exception('Login error: ${e.message}');
@@ -175,12 +102,9 @@ class AuthService {
     required String password,
     required String name,
   }) async {
-    // Jika mock mode aktif, gunakan mock data
     if (useMockAuth) {
       return _mockRegister(email: email, password: password, name: name);
     }
-
-    // Jika tidak, gunakan API real
     return _apiRegister(email: email, password: password, name: name);
   }
 
@@ -190,28 +114,28 @@ class AuthService {
     required String password,
     required String name,
   }) async {
-    // Simulate network delay
     await Future.delayed(Duration(seconds: 2));
 
-    // Validasi sederhana
     if (email.isEmpty || password.isEmpty || name.isEmpty) {
       throw Exception('Data tidak boleh kosong');
     }
+    
+    final newUser = UserModel(
+      id: DateTime.now().millisecondsSinceEpoch, // Unique mock ID
+      name: name,
+      email: email,
+      role: AppStrings.roleUser, 
+      subRole: AppStrings.subRoleWarga, // Default to warga
+      phone: 'N/A',
+      address: 'N/A',
+      createdAt: DateTime.now(),
+    );
 
-    // Mock registration success
     return AuthResponse(
       success: true,
       message: 'Registrasi berhasil',
-      user: UserModel(
-        id: 'USER-${DateTime.now().millisecondsSinceEpoch}',
-        name: name,
-        email: email,
-        phone: '081234567890',
-        address: 'Jakarta, Indonesia',
-        createdAt: DateTime.now(),
-        role: 'USER', 
-      ),
-      token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
+      user: newUser,
+      token: 'mock_token_register_${DateTime.now().millisecondsSinceEpoch}',
     );
   }
 
@@ -236,7 +160,8 @@ class AuthService {
       if (response.statusCode == 201) {
         return AuthResponse.fromJson(response.data);
       } else {
-        throw Exception('Register failed');
+        final message = response.data['message'] ?? 'Registrasi gagal';
+        throw Exception(message);
       }
     } on DioException catch (e) {
       throw Exception('Register error: ${e.message}');
@@ -248,23 +173,13 @@ class AuthService {
   // Logout
   Future<void> logout() async {
     try {
-      // Jika mock mode aktif, gunakan mock logout
-      if (useMockAuth) {
-        await _mockLogout();
-      } else {
-        // Jika tidak, gunakan API real
+      if (!useMockAuth) {
         await _apiLogout();
       }
       apiClient.removeToken();
     } on DioException catch (e) {
       throw Exception('Logout error: ${e.message}');
     }
-  }
-
-  // Mock Logout
-  Future<void> _mockLogout() async {
-    // Simulate network delay
-    await Future.delayed(Duration(seconds: 1));
   }
 
   // Real API Logout
@@ -278,12 +193,13 @@ class AuthService {
       final response = await apiClient.dio.get('/auth/verify');
 
       if (response.statusCode == 200) {
+        // Langsung parse data response sebagai UserModel
         return UserModel.fromJson(response.data);
       } else {
-        throw Exception('Token verification failed');
+        throw Exception('Verifikasi token gagal');
       }
     } on DioException catch (e) {
-      throw Exception('Token verification error: ${e.message}');
+      throw Exception('Verifikasi token error: ${e.message}');
     }
   }
 }

@@ -1,34 +1,45 @@
-/// User Model - Represents authenticated user
+// lib/features/auth/models/user_model.dart
+
+/// User Model - Represents authenticated user (Matches DBML 'users' table)
 class UserModel {
-  final String id;
+  final int id;
   final String email;
   final String name;
   final String? phone;
   final String? address;
+  final String role;       // 'admin' or 'user' (from DBML)
+  final String subRole;    // 'warga', 'rt', 'rw', 'bendahara', 'sekretaris' (from DBML)
   final DateTime? createdAt;
-  final String? role; // [WAJIB: Field role]
 
   UserModel({
     required this.id,
     required this.email,
     required this.name,
+    required this.role,
+    required this.subRole,
     this.phone,
     this.address,
     this.createdAt,
-    this.role,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // Memastikan ID di-parse sebagai int
+    final idValue = json['id'] is String ? int.tryParse(json['id']) : json['id'];
+    
+    // Default role jika tidak ada
+    final String defaultRole = json['sub_role'] == 'admin' ? 'admin' : 'user';
+
     return UserModel(
-      id: json['id'] ?? '',
+      id: idValue ?? 0,
       email: json['email'] ?? '',
       name: json['name'] ?? '',
       phone: json['phone'],
       address: json['address'],
+      role: json['role'] ?? defaultRole,
+      subRole: json['sub_role'] ?? 'warga',
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'].toString())
+          ? DateTime.tryParse(json['created_at'].toString())
           : null,
-      role: json['role'],
     );
   }
 
@@ -39,19 +50,21 @@ class UserModel {
       'name': name,
       'phone': phone,
       'address': address,
-      'created_at': createdAt?.toIso8601String(),
       'role': role,
+      'sub_role': subRole,
+      'created_at': createdAt?.toIso8601String(),
     };
   }
 
   UserModel copyWith({
-    String? id,
+    int? id,
     String? email,
     String? name,
     String? phone,
     String? address,
     DateTime? createdAt,
     String? role,
+    String? subRole,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -61,6 +74,7 @@ class UserModel {
       address: address ?? this.address,
       createdAt: createdAt ?? this.createdAt,
       role: role ?? this.role,
+      subRole: subRole ?? this.subRole,
     );
   }
 }
@@ -89,8 +103,15 @@ class RegisterRequest {
     required this.name,
   });
 
+  // Menambahkan role default 'user' dan sub_role 'warga' saat register awal
   Map<String, dynamic> toJson() {
-    return {'email': email, 'password': password, 'name': name};
+    return {
+      'email': email,
+      'password': password,
+      'name': name,
+      'role': 'user', 
+      'sub_role': 'warga',
+    };
   }
 }
 
@@ -109,7 +130,6 @@ class AuthResponse {
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
-    // Handle both formats: data.user and direct user field
     final userData = json['data']?['user'] ?? json['user'] ?? {};
     return AuthResponse(
       success: json['success'] ?? true,
@@ -117,14 +137,5 @@ class AuthResponse {
       token: json['data']?['token'] ?? json['token'] ?? '',
       user: UserModel.fromJson(userData),
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'success': success,
-      'message': message,
-      'token': token,
-      'user': user.toJson(),
-    };
   }
 }

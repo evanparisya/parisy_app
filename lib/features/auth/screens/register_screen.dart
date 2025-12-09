@@ -1,7 +1,8 @@
+// lib/features/auth/screens/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../../core/widgets/common_widgets.dart';
+import 'package:parisy_app/core/constants/app_constants.dart';
+import 'package:parisy_app/core/widgets/common_widgets.dart';
 import '../controllers/auth_controller.dart';
 import 'login_screen.dart';
 
@@ -40,7 +41,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(AppColors.neutralWhite),
+      backgroundColor: AppColors.neutralWhite,
       body: Consumer<AuthController>(
         builder: (context, authController, child) {
           return SafeArea(
@@ -58,13 +59,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        // Clear error state before navigating back
                         context.read<AuthController>().clearError();
                         Navigator.pop(context);
                       },
                       child: Icon(
                         Icons.arrow_back,
-                        color: Color(AppColors.neutralBlack),
+                        color: AppColors.primaryBlack,
                       ),
                     ),
                     SizedBox(height: 30),
@@ -73,7 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Color(AppColors.primaryGreen),
+                        color: AppColors.primaryGreen,
                       ),
                     ),
                     SizedBox(height: 8),
@@ -81,7 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       'Daftar untuk memulai berbelanja',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Color(AppColors.neutralDarkGray),
+                        color: AppColors.neutralDarkGray,
                       ),
                     ),
                     SizedBox(height: 30),
@@ -151,14 +151,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Container(
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Color(AppColors.errorRed).withOpacity(0.1),
+                          color: AppColors.errorRed.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.error_outline,
-                              color: Color(AppColors.errorRed),
+                              color: AppColors.errorRed,
                             ),
                             SizedBox(width: 12),
                             Expanded(
@@ -166,7 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 authController.errorMessage ??
                                     'Terjadi kesalahan',
                                 style: TextStyle(
-                                  color: Color(AppColors.errorRed),
+                                  color: AppColors.errorRed,
                                   fontSize: 12,
                                 ),
                               ),
@@ -188,6 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         }
                       },
                       isLoading: authController.state == AuthState.loading,
+                      backgroundColor: AppColors.primaryBlack,
                     ),
                     SizedBox(height: 16),
                     Center(
@@ -197,13 +198,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Text(
                             AppStrings.alreadyHaveAccount,
                             style: TextStyle(
-                              color: Color(AppColors.neutralDarkGray),
+                              color: AppColors.neutralDarkGray,
                             ),
                           ),
                           SizedBox(width: 8),
                           GestureDetector(
                             onTap: () {
-                              // Clear error state before navigating back to login
                               context.read<AuthController>().clearError();
                               Navigator.pushReplacement(
                                 context,
@@ -215,7 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Text(
                               AppStrings.login,
                               style: TextStyle(
-                                color: Color(AppColors.primaryGreen),
+                                color: AppColors.primaryGreen,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

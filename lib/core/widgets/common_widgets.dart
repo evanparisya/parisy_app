@@ -1,12 +1,14 @@
+// lib/core/widgets/common_widgets.dart
 import 'package:flutter/material.dart';
-import '../constants/app_constants.dart';
+import 'package:parisy_app/core/constants/app_constants.dart';
 
-/// Primary Button - Main CTA
+/// Primary Button - Main CTA (Mirip tombol hitam di desain)
 class PrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   final bool isLoading;
   final double? width;
+  final Color backgroundColor;
 
   const PrimaryButton({
     Key? key,
@@ -14,6 +16,7 @@ class PrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.width,
+    this.backgroundColor = AppColors.secondaryButtonBg, // Default Hitam
   }) : super(key: key);
 
   @override
@@ -24,11 +27,10 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(AppColors.primaryGreen),
-          disabledBackgroundColor: Color(
-            AppColors.primaryGreen,
-          ).withOpacity(0.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          backgroundColor: backgroundColor,
+          disabledBackgroundColor: backgroundColor.withOpacity(0.5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)), // Lebih bulat
+          elevation: 0,
         ),
         child: isLoading
             ? SizedBox(
@@ -37,14 +39,14 @@ class PrimaryButton extends StatelessWidget {
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    Color(AppColors.neutralWhite),
+                    AppColors.neutralWhite,
                   ),
                 ),
               )
             : Text(
                 label,
                 style: TextStyle(
-                  color: Color(AppColors.neutralWhite),
+                  color: AppColors.neutralWhite,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -54,7 +56,7 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
-/// Secondary Button - Outline/Cancel button
+/// Secondary Button - Outline/Cancel button (Menggunakan warna hijau)
 class SecondaryButton extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
@@ -77,8 +79,8 @@ class SecondaryButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: isLoading ? null : onPressed,
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Color(AppColors.neutralDarkGray), width: 1),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          side: BorderSide(color: AppColors.primaryGreen, width: 1),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
         ),
         child: isLoading
             ? SizedBox(
@@ -87,14 +89,14 @@ class SecondaryButton extends StatelessWidget {
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    Color(AppColors.neutralDarkGray),
+                    AppColors.primaryGreen,
                   ),
                 ),
               )
             : Text(
                 label,
                 style: TextStyle(
-                  color: Color(AppColors.neutralDarkGray),
+                  color: AppColors.primaryGreen,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -104,7 +106,7 @@ class SecondaryButton extends StatelessWidget {
   }
 }
 
-/// Input Field - Form input
+/// Input Field - Form input (Mengikuti gaya flat dan minimalis desain)
 class InputField extends StatelessWidget {
   final String label;
   final String hint;
@@ -134,10 +136,11 @@ class InputField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Label Text (lebih kecil, di atas)
         Text(
           label,
           style: TextStyle(
-            color: Color(AppColors.neutralBlack),
+            color: AppColors.primaryBlack,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -154,14 +157,21 @@ class InputField extends StatelessWidget {
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,
-            filled: true,
-            fillColor: enabled
-                ? Color(AppColors.neutralGray)
-                : Color(AppColors.neutralGray).withOpacity(0.5),
+            // Gaya input yang lebih flat dan border tipis
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
+              borderSide: BorderSide(color: AppColors.neutralDarkGray.withOpacity(0.3), width: 1),
             ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.neutralDarkGray.withOpacity(0.3), width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppColors.primaryGreen, width: 2),
+            ),
+            filled: true,
+            fillColor: AppColors.neutralWhite,
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
@@ -184,7 +194,7 @@ class LoadingWidget extends StatelessWidget {
         children: [
           CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(
-              Color(AppColors.primaryGreen),
+              AppColors.primaryGreen,
             ),
           ),
           if (message != null) ...[
@@ -193,7 +203,7 @@ class LoadingWidget extends StatelessWidget {
               message!,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Color(AppColors.neutralDarkGray),
+                color: AppColors.neutralDarkGray,
                 fontSize: 14,
               ),
             ),
@@ -218,7 +228,7 @@ class ErrorWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, color: Color(AppColors.errorRed), size: 64),
+          Icon(Icons.error_outline, color: AppColors.errorRed, size: 64),
           SizedBox(height: 16),
           Text(message, textAlign: TextAlign.center),
           SizedBox(height: 16),
@@ -247,7 +257,7 @@ class EmptyStateWidget extends StatelessWidget {
         children: [
           Icon(
             Icons.inbox_outlined,
-            color: Color(AppColors.neutralDarkGray),
+            color: AppColors.neutralDarkGray,
             size: 64,
           ),
           SizedBox(height: 16),

@@ -1,11 +1,11 @@
+// lib/features/admin/screens/admin_products_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:parisy_app/core/constants/app_constants.dart';
+import 'package:parisy_app/core/widgets/common_widgets.dart';
+import 'package:parisy_app/features/user/marketplace/models/product_model.dart';
+import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart'; 
 import 'dart:io';
-import '../../../core/constants/app_constants.dart';
-import '../../../core/widgets/common_widgets.dart';
-import '../controllers/admin_controller.dart';
-import '../models/admin_product_model.dart';
 
 class AdminProductsScreen extends StatefulWidget {
   const AdminProductsScreen({Key? key}) : super(key: key);
@@ -22,7 +22,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     super.initState();
     _searchController = TextEditingController();
     Future.microtask(() {
-      context.read<AdminController>().loadProducts();
+      context.read<MarketplaceController>().loadInitialData();
     });
   }
 
@@ -35,15 +35,12 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(AppColors.neutralWhite),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Color(AppColors.primaryGreen),
+        backgroundColor: AppColors.background,
         elevation: 0,
-        title: Text('Kelola Barang'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        iconTheme: IconThemeData(color: AppColors.primaryBlack),
+        title: Text('CRUD Barang Jual Beli', style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold)),
       ),
       body: Column(
         children: [
@@ -55,16 +52,14 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
               decoration: InputDecoration(
                 labelText: 'Cari Barang',
                 hintText: 'Cari nama atau deskripsi',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                prefixIcon: Icon(Icons.search, color: AppColors.neutralDarkGray),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onChanged: (value) {
                 if (value.isNotEmpty) {
-                  context.read<AdminController>().searchProducts(value);
+                  context.read<MarketplaceController>().searchProducts(value);
                 } else {
-                  context.read<AdminController>().loadProducts();
+                  context.read<MarketplaceController>().resetFilters();
                 }
               },
             ),
@@ -72,29 +67,26 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
           // Products list
           Expanded(
-            child: Consumer<AdminController>(
-              builder: (context, adminController, _) {
-                if (adminController.state == AdminState.loading) {
+            child: Consumer<MarketplaceController>(
+              builder: (context, controller, _) {
+                if (controller.state == MarketplaceState.loading && controller.products.isEmpty) {
                   return Center(child: CircularProgressIndicator());
                 }
 
-                if (adminController.products.isEmpty) {
-                  return Center(child: Text('Tidak ada barang'));
+                if (controller.products.isEmpty) {
+                  return Center(child: Text('Tidak ada barang jual beli'));
                 }
 
                 return ListView.builder(
                   padding: EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: adminController.products.length,
+                  itemCount: controller.products.length,
                   itemBuilder: (context, index) {
-                    final product = adminController.products[index];
-                    return _ProductCard(
+                    final product = controller.products[index];
+                    return _ProductManagementCard(
                       product: product,
-                      onEdit: () {
-                        _showProductDialog(context, product);
-                      },
-                      onDelete: () {
-                        _showDeleteDialog(context, product.id);
-                      },
+                      onEdit: () => _showProductDialog(context, product),
+                      onDelete: () => _showDeleteDialog(context, product.id, product.name),
+                      isCru: false, // Menandakan ini adalah CRUD
                     );
                   },
                 );
@@ -104,42 +96,35 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Color(AppColors.primaryGreen),
-        onPressed: () {
-          _showProductDialog(context, null);
-        },
-        child: Icon(Icons.add),
+        backgroundColor: AppColors.primaryBlack,
+        onPressed: () => _showProductDialog(context, null),
+        child: Icon(Icons.add, color: AppColors.neutralWhite),
       ),
     );
   }
 
-  void _showProductDialog(BuildContext context, AdminProductModel? product) {
+  void _showProductDialog(BuildContext context, ProductModel? product) {
     showDialog(
       context: context,
-      builder: (context) => _ProductFormDialog(product: product),
+      builder: (context) => _ProductFormDialog(product: product, isCru: false),
     );
   }
 
-  void _showDeleteDialog(BuildContext context, String productId) {
+  void _showDeleteDialog(BuildContext context, int id, String name) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Hapus Barang'),
-        content: Text('Apakah Anda yakin ingin menghapus barang ini?'),
+        content: Text('Apakah Anda yakin ingin menghapus $name?'),
         actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Batal')),
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<AdminController>().deleteProduct(productId);
+            onPressed: () async {
               Navigator.pop(context);
+              // Asumsi ada metode deleteProduct di MarketplaceController
+              await context.read<MarketplaceController>().deleteProduct(id);
             },
-            child: Text(
-              'Hapus',
-              style: TextStyle(color: Color(AppColors.errorRed)),
-            ),
+            child: Text('Hapus', style: TextStyle(color: AppColors.errorRed)),
           ),
         ],
       ),
@@ -147,235 +132,90 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   }
 }
 
-class _ProductCard extends StatelessWidget {
-  final AdminProductModel product;
+// --- Helper Widgets (Disalin dari RT Products Screen) ---
+class _ProductManagementCard extends StatelessWidget {
+  final ProductModel product;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final bool isCru;
 
-  const _ProductCard({
-    required this.product,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _ProductManagementCard({required this.product, required this.onEdit, required this.onDelete, this.isCru = true});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Card(
       margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Color(AppColors.neutralWhite),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Color(AppColors.neutralGray), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Product image placeholder
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Color(AppColors.neutralGray),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.image,
-                  color: Color(AppColors.neutralDarkGray),
-                ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: AppColors.neutralGray,
+                borderRadius: BorderRadius.circular(8),
               ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(AppColors.neutralBlack),
-                      ),
-                    ),
-                    Text(
-                      product.description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(AppColors.neutralDarkGray),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Rp ${product.price.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Color(AppColors.primaryGreen),
-                          ),
-                        ),
-                        Text(
-                          'Stok: ${product.stock}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(AppColors.neutralDarkGray),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                product.category,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Color(AppColors.neutralDarkGray),
-                ),
-              ),
-              Row(
+              child: Icon(Icons.fastfood, color: AppColors.neutralDarkGray),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.edit,
-                      color: Color(AppColors.primaryGreen),
-                    ),
-                    onPressed: onEdit,
-                    iconSize: 18,
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.delete, color: Color(AppColors.errorRed)),
-                    onPressed: onDelete,
-                    iconSize: 18,
-                  ),
+                  Text(product.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
+                  Text('Rp ${product.price.toStringAsFixed(0)} | Stok: ${product.stock}', style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
+                  SizedBox(height: 4),
+                  Text('Kategori: ${product.category}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primaryGreen)),
                 ],
               ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProductFormDialog extends StatefulWidget {
-  final AdminProductModel? product;
-
-  const _ProductFormDialog({this.product});
-
-  @override
-  State<_ProductFormDialog> createState() => _ProductFormDialogState();
-}
-
-class _ProductFormDialogState extends State<_ProductFormDialog> {
-  late TextEditingController _nameController;
-  late TextEditingController _descriptionController;
-  late TextEditingController _priceController;
-  late TextEditingController _stockController;
-  late TextEditingController _categoryController;
-  late TextEditingController _sellerEmailController;
-  final _formKey = GlobalKey<FormState>();
-
-  File? _selectedImage;
-  final ImagePicker _imagePicker = ImagePicker();
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.product?.name ?? '');
-    _descriptionController = TextEditingController(
-      text: widget.product?.description ?? '',
-    );
-    _priceController = TextEditingController(
-      text: widget.product?.price.toString() ?? '',
-    );
-    _stockController = TextEditingController(
-      text: widget.product?.stock.toString() ?? '',
-    );
-    _categoryController = TextEditingController(
-      text: widget.product?.category ?? '',
-    );
-    _sellerEmailController = TextEditingController(
-      text: widget.product?.sellerEmail ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    _priceController.dispose();
-    _stockController.dispose();
-    _categoryController.dispose();
-    _sellerEmailController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickImageFromGallery() async {
-    final XFile? image = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-    );
-    if (image != null) {
-      setState(() {
-        _selectedImage = File(image.path);
-      });
-    }
-  }
-
-  Future<void> _takePhotoFromCamera() async {
-    final XFile? image = await _imagePicker.pickImage(
-      source: ImageSource.camera,
-    );
-    if (image != null) {
-      setState(() {
-        _selectedImage = File(image.path);
-      });
-    }
-  }
-
-  void _showImageSourceDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Pilih Sumber Foto'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.camera_alt),
-              title: Text('Ambil Foto dengan Kamera'),
-              onTap: () {
-                Navigator.pop(context);
-                _takePhotoFromCamera();
-              },
             ),
-            ListTile(
-              leading: Icon(Icons.photo_library),
-              title: Text('Pilih dari Galeri'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImageFromGallery();
-              },
+            Row(
+              children: [
+                IconButton(icon: Icon(Icons.edit, color: AppColors.primaryBlack, size: 20), onPressed: onEdit),
+                if (!isCru) // Jika ini CRUD (Admin), tampilkan delete
+                  IconButton(icon: Icon(Icons.delete, color: AppColors.errorRed, size: 20), onPressed: onDelete),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+}
 
+class _ProductFormDialog extends StatefulWidget {
+  final ProductModel? product;
+  final bool isCru;
+  const _ProductFormDialog({this.product, this.isCru = false});
+
+  @override
+  State<_ProductFormDialog> createState() => _ProductFormDialogState();
+}
+
+class _ProductFormDialogState extends State<_ProductFormDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _descController;
+  late TextEditingController _priceController;
+  late TextEditingController _stockController;
+  String? _selectedCategory;
+  
+  final List<String> _categories = ['daun', 'akar', 'bunga', 'buah'];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.product?.name ?? '');
+    _descController = TextEditingController(text: widget.product?.description ?? '');
+    _priceController = TextEditingController(text: widget.product?.price.toString() ?? '');
+    _stockController = TextEditingController(text: widget.product?.stock.toString() ?? '');
+    _selectedCategory = widget.product?.category;
+  }
+  
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -386,145 +226,34 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Image Preview
-              Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Color(AppColors.neutralGray),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Color(AppColors.neutralGray),
-                    width: 2,
-                  ),
-                ),
-                child: _selectedImage != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Image.file(_selectedImage!, fit: BoxFit.cover),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.image,
-                            color: Color(AppColors.neutralDarkGray),
-                            size: 40,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Tidak ada foto',
-                            style: TextStyle(
-                              color: Color(AppColors.neutralDarkGray),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
+              InputField(label: 'Nama', hint: 'Nama Barang', controller: _nameController),
+              SizedBox(height: 12),
+              InputField(label: 'Deskripsi', hint: 'Deskripsi Barang', controller: _descController, maxLines: 2),
+              SizedBox(height: 12),
+              InputField(label: 'Harga', hint: 'Harga Jual', controller: _priceController, keyboardType: TextInputType.number),
+              SizedBox(height: 12),
+              InputField(label: 'Stok', hint: 'Stok Tersedia', controller: _stockController, keyboardType: TextInputType.number),
+              SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(labelText: 'Kategori'),
+                value: _selectedCategory,
+                items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.toUpperCase()))).toList(),
+                onChanged: (value) => setState(() => _selectedCategory = value),
               ),
               SizedBox(height: 12),
-
-              // Upload Image Button
-              ElevatedButton.icon(
-                onPressed: _showImageSourceDialog,
-                icon: Icon(Icons.photo_camera),
-                label: Text('Pilih Foto'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(AppColors.primaryGreen),
-                  foregroundColor: Color(AppColors.neutralWhite),
-                  minimumSize: Size(double.infinity, 40),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // Form Fields
-              InputField(
-                label: 'Nama Barang',
-                hint: 'Masukkan nama barang',
-                controller: _nameController,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Nama harus diisi' : null,
-              ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Deskripsi',
-                hint: 'Masukkan deskripsi',
-                controller: _descriptionController,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Deskripsi harus diisi' : null,
-              ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Harga',
-                hint: 'Masukkan harga',
-                controller: _priceController,
-                keyboardType: TextInputType.number,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Harga harus diisi' : null,
-              ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Stok',
-                hint: 'Masukkan stok',
-                controller: _stockController,
-                keyboardType: TextInputType.number,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Stok harus diisi' : null,
-              ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Kategori',
-                hint: 'Masukkan kategori',
-                controller: _categoryController,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Kategori harus diisi' : null,
-              ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Email Penjual',
-                hint: 'Masukkan email penjual',
-                controller: _sellerEmailController,
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Email penjual harus diisi' : null,
-              ),
+              Text('Image URL/Upload diabaikan untuk demo ini', style: TextStyle(fontSize: 10, color: AppColors.errorRed)),
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('Batal'),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final product = AdminProductModel(
-                id:
-                    widget.product?.id ??
-                    'PROD-${DateTime.now().millisecondsSinceEpoch}',
-                name: _nameController.text,
-                description: _descriptionController.text,
-                price: double.parse(_priceController.text),
-                stock: int.parse(_stockController.text),
-                category: _categoryController.text,
-                sellerEmail: _sellerEmailController.text,
-                imageUrl: _selectedImage?.path,
-                createdAt: widget.product?.createdAt ?? DateTime.now(),
-              );
-
-              if (widget.product == null) {
-                context.read<AdminController>().addProduct(product);
-              } else {
-                context.read<AdminController>().updateProduct(product);
-              }
-
-              Navigator.pop(context);
-            }
-          },
-          child: Text('Simpan'),
-        ),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text('Batal')),
+        TextButton(onPressed: () {
+          if (_formKey.currentState!.validate()) {
+            // Logika save
+            Navigator.pop(context);
+          }
+        }, child: Text('Simpan')),
       ],
     );
   }

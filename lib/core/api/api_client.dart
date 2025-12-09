@@ -1,5 +1,6 @@
+// lib/core/api/api_client.dart
 import 'package:dio/dio.dart';
-import '../constants/app_constants.dart';
+import 'package:parisy_app/core/constants/app_constants.dart';
 
 class ApiClient {
   late Dio _dio;
@@ -17,7 +18,7 @@ class ApiClient {
       ),
     );
 
-    // Tambahkan interceptor jika diperlukan (logging, error handling, dll)
+    // Interceptor untuk logging dan penambahan token
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
