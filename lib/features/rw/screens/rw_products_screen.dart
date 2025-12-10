@@ -1,15 +1,15 @@
 // lib/features/rw/screens/rw_products_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+// import 'package:image_picker/image_picker.dart'; // Dihapus: Unused Import
+// import 'dart:io'; // Dihapus: Unused Import
 import 'package:parisy_app/core/constants/app_constants.dart';
 import 'package:parisy_app/core/widgets/common_widgets.dart';
 import 'package:parisy_app/features/user/marketplace/models/product_model.dart';
 import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart'; 
 
 class RwProductsScreen extends StatefulWidget {
-  const RwProductsScreen({Key? key}) : super(key: key);
+  const RwProductsScreen({super.key});
 
   @override
   State<RwProductsScreen> createState() => _RwProductsScreenState();
@@ -22,8 +22,11 @@ class _RwProductsScreenState extends State<RwProductsScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    // Perbaikan: Panggil fungsi pemuatan data dari microtask untuk memitigasi use_build_context_synchronously
     Future.microtask(() {
-      context.read<MarketplaceController>().loadInitialData();
+      if (mounted) { // Tambahkan check mounted
+        context.read<MarketplaceController>().loadInitialData();
+      }
     });
   }
 
@@ -57,6 +60,7 @@ class _RwProductsScreenState extends State<RwProductsScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onChanged: (value) {
+                if (!mounted) return; // Tambahkan check mounted
                 if (value.isNotEmpty) {
                   context.read<MarketplaceController>().searchProducts(value);
                 } else {
@@ -87,6 +91,7 @@ class _RwProductsScreenState extends State<RwProductsScreen> {
                       product: product,
                       onEdit: () => _showProductDialog(context, product),
                       onDelete: () { /* Delete is removed for CRU */ },
+                      isCru: true, // Nilai eksplisit
                     );
                   },
                 );
@@ -111,14 +116,21 @@ class _RwProductsScreenState extends State<RwProductsScreen> {
   }
 }
 
-// --- Helper Widgets (Diambil dari RT Products - memastikan semua helpers terdefinisi) ---
+// --- Helper Widgets ---
+
+// Perbaikan: isCru harus diinisialisasi di constructor
 class _ProductManagementCard extends StatelessWidget {
   final ProductModel product;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final bool isCru;
 
-  const _ProductManagementCard({required this.product, required this.onEdit, required this.onDelete, this.isCru = true});
+  const _ProductManagementCard({
+    required this.product, 
+    required this.onEdit, 
+    required this.onDelete, 
+    this.isCru = true, // Nilai default untuk final variable
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +181,8 @@ class _ProductManagementCard extends StatelessWidget {
 class _ProductFormDialog extends StatefulWidget {
   final ProductModel? product;
   final bool isCru;
+
+  // Perbaikan: isCru harus diinisialisasi di constructor
   const _ProductFormDialog({this.product, this.isCru = false});
 
   @override

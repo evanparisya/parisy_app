@@ -8,7 +8,7 @@ import 'package:parisy_app/features/user/marketplace/controllers/marketplace_con
 import 'dart:io';
 
 class AdminProductsScreen extends StatefulWidget {
-  const AdminProductsScreen({Key? key}) : super(key: key);
+  const AdminProductsScreen({super.key});
 
   @override
   State<AdminProductsScreen> createState() => _AdminProductsScreenState();
@@ -236,7 +236,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(labelText: 'Kategori'),
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.toUpperCase()))).toList(),
                 onChanged: (value) => setState(() => _selectedCategory = value),
               ),

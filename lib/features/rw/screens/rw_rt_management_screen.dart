@@ -8,7 +8,7 @@ import 'package:parisy_app/features/management/users/models/rt_model.dart';
 import 'package:parisy_app/features/management/users/models/warga_model.dart';
 
 class RwRtManagementScreen extends StatefulWidget {
-  const RwRtManagementScreen({Key? key}) : super(key: key);
+  const RwRtManagementScreen({super.key});
 
   @override
   State<RwRtManagementScreen> createState() => _RwRtManagementScreenState();

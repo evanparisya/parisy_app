@@ -9,7 +9,7 @@ import 'package:parisy_app/features/management/finance/models/financial_report_m
 import 'package:intl/intl.dart';
 
 class BendaharaFinanceScreen extends StatefulWidget {
-  const BendaharaFinanceScreen({Key? key}) : super(key: key);
+  const BendaharaFinanceScreen({super.key});
 
   @override
   State<BendaharaFinanceScreen> createState() => _BendaharaFinanceScreenState();
@@ -73,7 +73,7 @@ class _BendaharaFinanceScreenState extends State<BendaharaFinanceScreen> {
                   if (history.isEmpty)
                     EmptyStateWidget(message: 'Belum ada riwayat arus kas.'),
 
-                  ...history.map((entry) => _CashFlowItemCard(entry: entry)).toList(),
+                  ...history.map((entry) => _CashFlowItemCard(entry: entry)),
                 ],
               ),
             ),
@@ -240,7 +240,7 @@ class _CashFlowFormDialogState extends State<_CashFlowFormDialog> {
             children: [
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(labelText: 'Tipe'),
-                value: _selectedType,
+                initialValue: _selectedType,
                 items: ['IN', 'OUT'].map((t) => DropdownMenuItem(value: t, child: Text(t == 'IN' ? 'Pemasukan' : 'Pengeluaran'))).toList(),
                 onChanged: (value) => setState(() => _selectedType = value),
               ),

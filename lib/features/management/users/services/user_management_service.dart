@@ -4,7 +4,6 @@ import 'package:parisy_app/core/constants/app_constants.dart';
 import 'package:parisy_app/core/constants/dummy_data.dart';
 import 'package:parisy_app/features/management/users/models/warga_model.dart';
 import 'package:parisy_app/features/management/users/models/rt_model.dart';
-import 'package:parisy_app/features/management/users/models/rw_model.dart';
 
 class UserManagementService {
   final ApiClient apiClient;

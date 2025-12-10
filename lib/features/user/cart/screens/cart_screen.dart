@@ -9,7 +9,7 @@ import 'package:parisy_app/features/user/cart/models/cart_item_model.dart';
 import 'package:intl/intl.dart';
 
 class CartScreen extends StatelessWidget {
-  const CartScreen({Key? key}) : super(key: key);
+  const CartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class CartScreen extends StatelessWidget {
                         children: [
                           Text('Items (${controller.cart.itemUniqueCount})', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
                           SizedBox(height: 12),
-                          ...controller.cart.items.map((item) => _CartItemCard(item: item, controller: controller)).toList(),
+                          ...controller.cart.items.map((item) => _CartItemCard(item: item, controller: controller)),
                         ],
                       ),
                     ),

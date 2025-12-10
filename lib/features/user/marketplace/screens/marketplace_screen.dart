@@ -2,15 +2,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:parisy_app/core/constants/app_constants.dart';
-import 'package:parisy_app/core/widgets/common_widgets.dart';
+// Ganti alias untuk menghindari ambiguous import dengan ErrorWidget bawaan Flutter
+import 'package:parisy_app/core/widgets/common_widgets.dart' as common; 
+// import 'package:parisy_app/features/user/marketplace/models/product_model.dart'; // Dihapus: Unused Import
 import 'package:parisy_app/features/user/cart/controllers/cart_controller.dart';
 import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart';
-import 'package:parisy_app/features/user/marketplace/models/product_model.dart';
+import 'package:parisy_app/features/user/marketplace/models/product_model.dart'; // Dipakai lagi di product_card
 import 'package:parisy_app/features/user/marketplace/widgets/product_card.dart';
 import 'product_detail_screen.dart';
 
 class MarketplaceScreen extends StatefulWidget {
-  const MarketplaceScreen({Key? key}) : super(key: key);
+  const MarketplaceScreen({super.key});
 
   @override
   State<MarketplaceScreen> createState() => _MarketplaceScreenState();
@@ -25,7 +27,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     super.initState();
     _searchController = TextEditingController();
     Future.microtask(() {
-      context.read<MarketplaceController>().loadInitialData();
+      if (mounted) {
+        context.read<MarketplaceController>().loadInitialData();
+      }
     });
   }
 
@@ -34,6 +38,55 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+  
+  // Perbaikan 1: Pindahkan _buildCategoryFilter, _getCategoryIcon, dan _CategoryItem ke dalam State Class
+  // atau ubah menjadi method atau class luar yang diakses dengan benar.
+  // Karena mereka hanya digunakan di sini, kita akan menjadikannya method internal dan Class internal.
+
+  // Perbaikan 5: Menambahkan _buildCategoryFilter sebagai metode internal
+  Widget _buildCategoryFilter(MarketplaceController controller) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: SizedBox(
+        height: 80,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          children: [
+            // All Category Button
+            _CategoryItem(
+              label: 'All',
+              icon: Icons.all_inclusive,
+              isSelected: controller.selectedCategory == null,
+              onTap: controller.resetFilters,
+            ),
+            SizedBox(width: 10),
+            // Category items (Fruits, Drinks, Snack, Food -> diganti dengan DBML categories)
+            ...controller.categories.map((category) => Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: _CategoryItem(
+                label: category.substring(0, 1).toUpperCase() + category.substring(1), 
+                icon: _getCategoryIcon(category),
+                isSelected: controller.selectedCategory == category,
+                onTap: () => controller.filterByCategory(category),
+              ),
+            )).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Perbaikan 5: Menambahkan _getCategoryIcon sebagai metode internal
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'daun': return Icons.grass;
+      case 'akar': return Icons.science;
+      case 'bunga': return Icons.local_florist;
+      case 'buah': return Icons.apple;
+      default: return Icons.category;
+    }
   }
   
   @override
@@ -59,7 +112,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               child: Column(
                 children: [
                   _buildSearchBar(context, controller),
-                  _buildCategoryFilter(controller),
+                  _buildCategoryFilter(controller), // Perbaikan 1: Sekarang sudah terdefinisi
                 ],
               ),
             ),
@@ -68,9 +121,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           if (controller.state == MarketplaceState.loading && controller.products.isEmpty)
             SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
           else if (controller.state == MarketplaceState.error)
-            SliverFillRemaining(child: ErrorWidget(message: controller.errorMessage ?? 'Gagal memuat.', onRetry: controller.loadInitialData))
+            SliverFillRemaining(child: common.ErrorWidget(message: controller.errorMessage ?? 'Gagal memuat.', onRetry: controller.loadInitialData))
           else if (controller.products.isEmpty)
-            SliverFillRemaining(child: EmptyStateWidget(message: 'Tidak ada produk ditemukan.'))
+            SliverFillRemaining(child: common.EmptyStateWidget(message: 'Tidak ada produk ditemukan.'))
           else
             SliverPadding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -87,6 +140,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     product: product,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ProductDetailScreen(product: product))),
                     onAddToCart: () {
+                      if (!mounted) return;
                       context.read<CartController>().addItem(productId: product.id, name: product.name, price: product.price);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('${product.name} ditambahkan!'), backgroundColor: AppColors.primaryGreen),
@@ -129,6 +183,25 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   }
 
   Widget _buildSearchBar(BuildContext context, MarketplaceController controller) {
+    // Memecah Color untuk mengatasi Deprecated: red, green, blue
+    final Color neutralDarkGray = AppColors.neutralDarkGray;
+    final Color neutralGray = AppColors.neutralGray;
+    
+    // Perbaikan 4: Gunakan Color.fromARGB untuk mengatasi deprecation
+    final Color hintColorWithOpacity = Color.fromARGB(
+      (255 * 0.5).round(), 
+      neutralDarkGray.red, 
+      neutralDarkGray.green, 
+      neutralDarkGray.blue
+    );
+
+    final Color fillColorWithOpacity = Color.fromARGB(
+      (255 * 0.5).round(), 
+      neutralGray.red, 
+      neutralGray.green, 
+      neutralGray.blue
+    );
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
       child: Row(
@@ -138,11 +211,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search for fast food...',
-                hintStyle: TextStyle(color: AppColors.neutralDarkGray.withOpacity(0.5)),
+                hintStyle: TextStyle(color: hintColorWithOpacity),
                 prefixIcon: Icon(Icons.search, color: AppColors.neutralDarkGray),
                 contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 10),
                 filled: true,
-                fillColor: AppColors.neutralGray.withOpacity(0.5),
+                fillColor: fillColorWithOpacity,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -157,6 +230,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           GestureDetector(
             onTap: () {
               controller.pickImageFromCamera();
+              if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Membuka kamera untuk mencari...')),
               );
@@ -175,51 +249,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       ),
     );
   }
-
-  Widget _buildCategoryFilter(MarketplaceController controller) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: SizedBox(
-        height: 80,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          children: [
-            // All Category Button
-            _CategoryItem(
-              label: 'All',
-              icon: Icons.all_inclusive,
-              isSelected: controller.selectedCategory == null,
-              onTap: controller.resetFilters,
-            ),
-            SizedBox(width: 10),
-            // Category items (Fruits, Drinks, Snack, Food -> diganti dengan DBML categories)
-            ...controller.categories.map((category) => Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: _CategoryItem(
-                label: category.substring(0, 1).toUpperCase() + category.substring(1), 
-                icon: _getCategoryIcon(category),
-                isSelected: controller.selectedCategory == category,
-                onTap: () => controller.filterByCategory(category),
-              ),
-            )).toList(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case 'daun': return Icons.grass;
-      case 'akar': return Icons.science;
-      case 'bunga': return Icons.local_florist;
-      case 'buah': return Icons.apple;
-      default: return Icons.category;
-    }
-  }
 }
 
+// Perbaikan 3: Pindahkan _CategoryItem ke luar State class agar dapat digunakan
 class _CategoryItem extends StatelessWidget {
   final String label;
   final IconData icon;

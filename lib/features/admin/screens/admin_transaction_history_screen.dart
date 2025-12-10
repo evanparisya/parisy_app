@@ -8,7 +8,7 @@ import 'package:parisy_app/features/management/reporting/models/transaction_repo
 import 'package:intl/intl.dart';
 
 class AdminTransactionHistoryScreen extends StatefulWidget {
-  const AdminTransactionHistoryScreen({Key? key}) : super(key: key);
+  const AdminTransactionHistoryScreen({super.key});
 
   @override
   State<AdminTransactionHistoryScreen> createState() => _AdminTransactionHistoryScreenState();

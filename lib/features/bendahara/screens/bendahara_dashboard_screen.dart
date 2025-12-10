@@ -10,7 +10,7 @@ import 'package:intl/intl.dart';
 import 'bendahara_finance_screen.dart';
 
 class BendaharaDashboardScreen extends StatefulWidget {
-  const BendaharaDashboardScreen({Key? key}) : super(key: key);
+  const BendaharaDashboardScreen({super.key});
 
   @override
   State<BendaharaDashboardScreen> createState() => _BendaharaDashboardScreenState();

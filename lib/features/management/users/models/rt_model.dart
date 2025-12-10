@@ -3,20 +3,14 @@ import 'package:parisy_app/features/management/users/models/warga_model.dart';
 
 class RtModel extends WargaModel {
   RtModel({
-    required int id,
-    required String name,
-    required String email,
-    required String phone,
-    required String address,
-    required DateTime createdAt,
+    required super.id,
+    required super.name,
+    required super.email,
+    required super.phone,
+    required super.address,
+    required super.createdAt,
   }) : super(
-          id: id,
-          name: name,
-          email: email,
-          phone: phone,
-          address: address,
           subRole: 'rt',
-          createdAt: createdAt,
         );
 
   factory RtModel.fromWargaModel(WargaModel warga) {

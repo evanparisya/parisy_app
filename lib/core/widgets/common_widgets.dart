@@ -11,13 +11,13 @@ class PrimaryButton extends StatelessWidget {
   final Color backgroundColor;
 
   const PrimaryButton({
-    Key? key,
+    super.key,
     required this.label,
     required this.onPressed,
     this.isLoading = false,
     this.width,
     this.backgroundColor = AppColors.secondaryButtonBg, // Default Hitam
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -64,12 +64,12 @@ class SecondaryButton extends StatelessWidget {
   final double? width;
 
   const SecondaryButton({
-    Key? key,
+    super.key,
     required this.label,
     required this.onPressed,
     this.isLoading = false,
     this.width,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +119,7 @@ class InputField extends StatelessWidget {
   final String? Function(String?)? validator;
 
   const InputField({
-    Key? key,
+    super.key,
     required this.label,
     required this.hint,
     required this.controller,
@@ -129,7 +129,7 @@ class InputField extends StatelessWidget {
     this.enabled = true,
     this.maxLines = 1,
     this.validator,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -184,7 +184,7 @@ class InputField extends StatelessWidget {
 class LoadingWidget extends StatelessWidget {
   final String? message;
 
-  const LoadingWidget({Key? key, this.message}) : super(key: key);
+  const LoadingWidget({super.key, this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -219,8 +219,7 @@ class ErrorWidget extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const ErrorWidget({Key? key, required this.message, required this.onRetry})
-    : super(key: key);
+  const ErrorWidget({super.key, required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -247,7 +246,7 @@ class ErrorWidget extends StatelessWidget {
 class EmptyStateWidget extends StatelessWidget {
   final String message;
 
-  const EmptyStateWidget({Key? key, required this.message}) : super(key: key);
+  const EmptyStateWidget({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {

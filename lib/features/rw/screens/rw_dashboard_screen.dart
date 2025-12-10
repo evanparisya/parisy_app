@@ -10,7 +10,7 @@ import 'rw_warga_screen.dart';
 import 'rw_products_screen.dart';
 
 class RwDashboardScreen extends StatefulWidget {
-  const RwDashboardScreen({Key? key}) : super(key: key);
+  const RwDashboardScreen({super.key});
 
   @override
   State<RwDashboardScreen> createState() => _RwDashboardScreenState();

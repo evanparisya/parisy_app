@@ -7,7 +7,7 @@ import 'package:parisy_app/features/user/profile/controllers/profile_controller.
 import 'package:parisy_app/features/auth/models/user_model.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -80,9 +80,9 @@ class _ProfileHeader extends StatelessWidget {
         // Placeholder image (Simulasi: Sophia Williams)
         CircleAvatar(
           radius: 40,
+          backgroundColor: AppColors.neutralGray,
           // Menggunakan Icon sebagai placeholder
           child: Icon(Icons.person, size: 40, color: AppColors.primaryGreen),
-          backgroundColor: AppColors.neutralGray,
         ),
         SizedBox(height: 10),
         Text(
@@ -176,8 +176,8 @@ class _ProfileEditScreenState extends State<_ProfileEditScreen> {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      child: Icon(Icons.person, size: 40, color: AppColors.primaryGreen),
                       backgroundColor: AppColors.neutralGray,
+                      child: Icon(Icons.person, size: 40, color: AppColors.primaryGreen),
                     ),
                     SizedBox(height: 10),
                     Text('Change your photo', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),

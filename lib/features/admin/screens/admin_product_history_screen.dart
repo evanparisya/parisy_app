@@ -8,7 +8,7 @@ import 'package:parisy_app/features/management/reporting/models/product_report_m
 import 'package:intl/intl.dart';
 
 class AdminProductHistoryScreen extends StatefulWidget {
-  const AdminProductHistoryScreen({Key? key}) : super(key: key);
+  const AdminProductHistoryScreen({super.key});
 
   @override
   State<AdminProductHistoryScreen> createState() => _AdminProductHistoryScreenState();

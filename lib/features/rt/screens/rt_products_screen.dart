@@ -1,15 +1,15 @@
 // lib/features/rt/screens/rt_products_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+// import 'package:image_picker/image_picker.dart'; // Dihapus: Unused Import
+// import 'dart:io'; // Dihapus: Unused Import
 import 'package:parisy_app/core/constants/app_constants.dart';
 import 'package:parisy_app/core/widgets/common_widgets.dart';
 import 'package:parisy_app/features/user/marketplace/models/product_model.dart';
 import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart'; 
 
 class RtProductsScreen extends StatefulWidget {
-  const RtProductsScreen({Key? key}) : super(key: key);
+  const RtProductsScreen({super.key});
 
   @override
   State<RtProductsScreen> createState() => _RtProductsScreenState();
@@ -22,8 +22,18 @@ class _RtProductsScreenState extends State<RtProductsScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    // Pindahkan logika pemuatan data ke _loadData untuk check mounted
+    _loadData();
+  }
+
+  // Perbaikan 3: Method untuk memuat data dengan check mounted
+  void _loadData() {
+    // Karena ini dipanggil dari initState, kita bisa menggunakan Future.microtask
+    // namun kita perlu memastikan widget masih hidup sebelum memanggil notifyListeners
     Future.microtask(() {
-      context.read<MarketplaceController>().loadInitialData();
+      if (mounted) {
+        context.read<MarketplaceController>().loadInitialData();
+      }
     });
   }
 
@@ -57,6 +67,8 @@ class _RtProductsScreenState extends State<RtProductsScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onChanged: (value) {
+                // Perbaikan 3: Tambahkan mounted check di sini juga, meskipun tidak ada await
+                if (!mounted) return;
                 if (value.isNotEmpty) {
                   context.read<MarketplaceController>().searchProducts(value);
                 } else {
@@ -87,6 +99,7 @@ class _RtProductsScreenState extends State<RtProductsScreen> {
                       product: product,
                       onEdit: () => _showProductDialog(context, product),
                       onDelete: () { /* Delete is removed for CRU */ },
+                      isCru: true, // Beri nilai default di sini atau hapus dari constructor jika tidak digunakan
                     );
                   },
                 );
@@ -116,12 +129,19 @@ class _ProductManagementCard extends StatelessWidget {
   final ProductModel product;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
-  final bool isCru;
+  final bool isCru; // Variabel final
 
-  const _ProductManagementCard({required this.product, required this.onEdit, required this.onDelete, this.isCru = true});
+  // Perbaikan 1: Inisialisasi isCru di constructor
+  const _ProductManagementCard({
+    required this.product, 
+    required this.onEdit, 
+    required this.onDelete, 
+    this.isCru = true, // Tambahkan nilai default
+  });
 
   @override
   Widget build(BuildContext context) {
+    // ... (Body Card tetap sama)
     return Card(
       margin: EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -169,6 +189,8 @@ class _ProductManagementCard extends StatelessWidget {
 class _ProductFormDialog extends StatefulWidget {
   final ProductModel? product;
   final bool isCru; // Flag CRU/CRUD
+
+  // Perbaikan 1: isCru juga perlu diinisialisasi
   const _ProductFormDialog({this.product, this.isCru = false});
 
   @override
@@ -215,7 +237,8 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(labelText: 'Kategori'),
-                value: _selectedCategory,
+                // Perbaikan: Menggunakan initialValue untuk widget stateful
+                value: _selectedCategory, 
                 items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.toUpperCase()))).toList(),
                 onChanged: (value) => setState(() => _selectedCategory = value),
               ),

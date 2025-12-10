@@ -8,7 +8,7 @@ import 'sekretaris_transaction_history_screen.dart';
 import 'sekretaris_product_history_screen.dart';
 
 class SekretarisDashboardScreen extends StatefulWidget {
-  const SekretarisDashboardScreen({Key? key}) : super(key: key);
+  const SekretarisDashboardScreen({super.key});
 
   @override
   State<SekretarisDashboardScreen> createState() => _SekretarisDashboardScreenState();

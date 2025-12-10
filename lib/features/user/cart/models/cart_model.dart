@@ -1,29 +1,44 @@
-// lib/features/user/cart/models/cart_item_model.dart
+// lib/features/user/cart/models/cart_model.dart
 
-/// Cart Item Model - Represents one vegetable item in the cart
-class CartItemModel {
-  final int productId;
-  final String name;
-  final double price; // price_unit in DBML context
-  int quantity;
+import 'package:parisy_app/features/user/cart/models/cart_item_model.dart';
+
+/// Cart Model - Represents the entire shopping cart
+class CartModel {
+  List<CartItemModel> items = [];
+
+  // Calculate total amount
+  double get total => items.fold(0.0, (sum, item) => sum + item.subtotal);
   
-  CartItemModel({
-    required this.productId,
-    required this.name,
-    required this.price,
-    this.quantity = 1,
+  // Get count of unique items
+  int get itemUniqueCount => items.length;
+
+  // Constructor
+  CartModel({List<CartItemModel>? items}) : items = items ?? [];
+}
+
+/// Checkout Request - Model for the API request payload
+class CheckoutRequest {
+  final int userId;
+  final double priceTotal;
+  final String statusPayment;
+  final String? notes;
+  final List<Map<String, dynamic>> items; // List of detail_transaction JSON
+
+  CheckoutRequest({
+    required this.userId,
+    required this.priceTotal,
+    required this.statusPayment,
+    this.notes,
+    required this.items,
   });
 
-  // Calculate subtotal
-  double get subtotal => price * quantity;
-
-  // Converts to the structure needed for detail_transactions
-  Map<String, dynamic> toDetailTransactionJson() {
+  Map<String, dynamic> toJson() {
     return {
-      'vegetable_id': productId,
-      'quantity': quantity,
-      'price_unit': price,
-      'subtotal': subtotal,
+      'user_id': userId,
+      'price_total': priceTotal,
+      'status_payment': statusPayment,
+      'notes': notes,
+      'items': items,
     };
   }
 }

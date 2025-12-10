@@ -9,7 +9,7 @@ import 'package:intl/intl.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final ProductModel product;
-  const ProductDetailScreen({Key? key, required this.product}) : super(key: key);
+  const ProductDetailScreen({super.key, required this.product});
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -97,7 +97,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   SizedBox(height: 8),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(child: Icon(Icons.person, color: AppColors.neutralWhite), backgroundColor: AppColors.neutralDarkGray),
+                    leading: CircleAvatar(backgroundColor: AppColors.neutralDarkGray, child: Icon(Icons.person, color: AppColors.neutralWhite)),
                     title: Text(widget.product.createdByName ?? 'Admin/Penjual', style: TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: Text('ID: ${widget.product.createdBy}'),
                   ),

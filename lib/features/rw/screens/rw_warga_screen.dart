@@ -7,7 +7,7 @@ import 'package:parisy_app/features/management/users/controllers/user_management
 import 'package:parisy_app/features/management/users/models/warga_model.dart';
 
 class RwWargaScreen extends StatefulWidget {
-  const RwWargaScreen({Key? key}) : super(key: key);
+  const RwWargaScreen({super.key});
 
   @override
   State<RwWargaScreen> createState() => _RwWargaScreenState();

@@ -8,7 +8,7 @@ import 'package:parisy_app/features/management/reporting/models/transaction_repo
 import 'package:intl/intl.dart';
 
 class SekretarisTransactionHistoryScreen extends StatefulWidget {
-  const SekretarisTransactionHistoryScreen({Key? key}) : super(key: key);
+  const SekretarisTransactionHistoryScreen({super.key});
 
   @override
   State<SekretarisTransactionHistoryScreen> createState() => _SekretarisTransactionHistoryScreenState();

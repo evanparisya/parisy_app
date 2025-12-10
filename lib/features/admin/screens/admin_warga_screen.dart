@@ -7,7 +7,7 @@ import 'package:parisy_app/features/management/users/controllers/user_management
 import 'package:parisy_app/features/management/users/models/warga_model.dart';
 
 class AdminWargaScreen extends StatefulWidget {
-  const AdminWargaScreen({Key? key}) : super(key: key);
+  const AdminWargaScreen({super.key});
 
   @override
   State<AdminWargaScreen> createState() => _AdminWargaScreenState();
@@ -256,7 +256,7 @@ class _WargaFormDialogState extends State<_WargaFormDialog> {
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(labelText: 'Peran Manajemen (Sub-Role)'),
-                value: _selectedSubRole,
+                initialValue: _selectedSubRole,
                 items: _managementRoles.map((r) => DropdownMenuItem(value: r, child: Text(r.toUpperCase()))).toList(),
                 onChanged: (value) => setState(() => _selectedSubRole = value),
               ),

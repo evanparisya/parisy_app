@@ -14,7 +14,7 @@ import 'admin_transaction_history_screen.dart';
 import 'admin_product_history_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({Key? key}) : super(key: key);
+  const AdminDashboardScreen({super.key});
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
