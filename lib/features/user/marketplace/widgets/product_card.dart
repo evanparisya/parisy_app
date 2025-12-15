@@ -80,7 +80,8 @@ class ProductCard extends StatelessWidget {
             Expanded(
               flex: 2,
               child: Padding(
-                padding: EdgeInsets.all(12),
+                // PERBAIKAN OVERFLOW: Mengurangi padding vertikal dari 12 ke 8
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
