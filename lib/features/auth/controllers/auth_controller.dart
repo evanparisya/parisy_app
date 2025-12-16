@@ -90,15 +90,25 @@ class AuthController extends ChangeNotifier {
     required String name,
     required String email,
     required String password,
+    required String address,
+    required String phone,
+    required String role,
+    required String subRole,
   }) async {
     _setState(AuthState.loading);
     _errorMessage = null;
 
-    final result = await authService.register(name, email, password);
+    final result = await authService.register(
+      name,
+      email,
+      address,
+      phone,
+      password,
+      role,
+      subRole,
+    );
 
     if (result['success']) {
-      // After successful registration, return to initial state
-      // User should login with their credentials
       _setState(AuthState.initial);
     } else {
       _setError(result['message'] ?? 'Registrasi gagal');

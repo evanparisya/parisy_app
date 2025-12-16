@@ -16,6 +16,8 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
+  late TextEditingController _addressController;
+  late TextEditingController _phoneController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
   final _formKey = GlobalKey<FormState>();
@@ -25,6 +27,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.initState();
     _nameController = TextEditingController();
     _emailController = TextEditingController();
+    _addressController = TextEditingController();
+    _phoneController = TextEditingController();
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
   }
@@ -39,6 +43,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       email: _emailController.text,
       password: _passwordController.text,
       name: _nameController.text,
+      address: _addressController.text,
+      phone: _phoneController.text,  
+      role: 'user',                  
+      subRole: 'warga',              
     );
 
     // Check if registration was successful
@@ -64,6 +72,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _addressController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -136,6 +146,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                     ).hasMatch(value!)) {
                       return 'Format email tidak valid';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+                InputField(
+                  label: 'Alamat',
+                  hint: 'Masukkan alamat Anda',
+                  controller: _addressController,
+                  validator: (value) {
+                    if (value?.isEmpty ?? true) {
+                      return 'Alamat tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+                InputField(
+                  label: 'Nomor Telepon',
+                  hint: 'Masukkan nomor telepon Anda',
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value?.isEmpty ?? true) {
+                      return 'Nomor telepon tidak boleh kosong';
+                    }
+                    if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(value!)) {
+                      return 'Format nomor telepon tidak valid';
                     }
                     return null;
                   },

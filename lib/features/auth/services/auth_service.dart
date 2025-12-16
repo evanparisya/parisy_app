@@ -44,12 +44,20 @@ class AuthService {
   Future<Map<String, dynamic>> register(
     String name,
     String email,
+    String address,
+    String phone,
     String password,
+  String role,
+  String subRole
   ) async {
     return await apiClient.post('auth/register', {
       'name': name,
       'email': email,
+      'address': address,
+      'phone': phone,
       'password': password,
+      'role': role,
+      'sub_role': subRole,
     });
   }
 
