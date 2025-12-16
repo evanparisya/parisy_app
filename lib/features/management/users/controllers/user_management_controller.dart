@@ -1,128 +1,204 @@
-// lib/features/management/users/controllers/user_management_controller.dart (Perbaikan)
-
 import 'package:flutter/material.dart';
 import 'package:parisy_app/features/management/users/models/warga_model.dart';
 import 'package:parisy_app/features/management/users/models/rt_model.dart';
 import 'package:parisy_app/features/management/users/services/user_management_service.dart';
-import 'package:parisy_app/core/constants/app_constants.dart';
-
-enum UserManagementState { initial, loading, loaded, error }
 
 class UserManagementController extends ChangeNotifier {
-  final UserManagementService service;
+  final UserManagementService _service;
 
-  UserManagementState _state = UserManagementState.initial;
-  String? _errorMessage;
-  List<WargaModel> _wargaList = [];
-  List<RtModel> _rtList = [];
+  UserManagementController({required UserManagementService service})
+    : _service = service;
 
-  UserManagementController({required this.service});
+  List<WargaModel> _users = [];
+  List<RtModel> _rtUsers = [];
+  Map<String, dynamic> _stats = {};
 
-  UserManagementState get state => _state;
-  String? get errorMessage => _errorMessage;
-  List<WargaModel> get wargaList => _wargaList;
-  List<RtModel> get rtList => _rtList;
+  bool _isLoading = false;
+  String? _error;
 
-  // --- Warga (Digunakan oleh Admin/RT/RW) ---
 
-  Future<void> loadAllWarga() async {
+  List<WargaModel> get users => _users;
+  List<RtModel> get rtUsers => _rtUsers;
+  Map<String, dynamic> get stats => _stats;
+
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  String? get errorMessage => _error;
+  bool get hasError => _error != null;
+
+  List<WargaModel> get wargaList => _users;
+  List<RtModel> get rtList => _rtUsers;
+  Map<String, dynamic>? get userStats => _stats.isNotEmpty ? _stats : null;
+
+  List<WargaModel> getUsersBySubRole(String subRole) {
+    return _users.where((user) => user.subRole == subRole).toList();
+  }
+
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
+  }
+
+  void _setError(String? error) {
+    _error = error;
+    notifyListeners();
+  }
+
+  void _setUsers(List<WargaModel> users) {
+    _users = users;
+    notifyListeners();
+  }
+
+  void _setRtUsers(List<RtModel> rtUsers) {
+    _rtUsers = rtUsers;
+    notifyListeners();
+  }
+
+  void _setStats(Map<String, dynamic> stats) {
+    _stats = stats;
+    notifyListeners();
+  }
+
+  Future<void> loadAllUsers() async {
+    _setLoading(true);
+    _setError(null);
+
     try {
-      _state = UserManagementState.loading;
-      notifyListeners();
-      _wargaList = await service.getAllUsers();
-      _state = UserManagementState.loaded;
-      _errorMessage = null;
+      final users = await _service.getAllUsers();
+      _setUsers(users);
     } catch (e) {
-      _state = UserManagementState.error;
-      _errorMessage = e.toString();
+      _setError(e.toString());
+      debugPrint('Error loading users: $e');
     } finally {
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
-  Future<void> loadWargaByRT(String rtIdentifier) async {
+  Future<void> loadUsersBySubRole(String subRole) async {
+    _setLoading(true);
+    _setError(null);
+
     try {
-      _state = UserManagementState.loading;
+      final users = await _service.getUsersBySubRole(subRole);
+      _setUsers(users);
+    } catch (e) {
+      _setError(e.toString());
+      debugPrint('Error loading users by sub_role: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> loadRTUsers() async {
+    _setLoading(true);
+    _setError(null);
+
+    try {
+      final rtUsers = await _service.getAllRT();
+      _setRtUsers(rtUsers);
+    } catch (e) {
+      _setError(e.toString());
+      debugPrint('Error loading RT users: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> loadStats() async {
+    _setLoading(true);
+    _setError(null);
+
+    try {
+      final stats = await _service.getUserStats();
+      _setStats(stats);
+    } catch (e) {
+      _setError(e.toString());
+      debugPrint('Error loading stats: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> addUser(WargaModel user) async {
+    _setLoading(true);
+    _setError(null);
+
+    try {
+      final newUser = await _service.addUser(user);
+
+      _users = [..._users, newUser];
       notifyListeners();
 
-      // Perbaikan baris 44: Mengakses properti statis langsung melalui nama kelas
-      if (UserManagementService.useMock) { 
-        await loadAllWarga(); 
-        // Simulasi filter: di implementasi nyata, ini akan memanggil API /users?rt_id=X
-        _wargaList = _wargaList.where((w) => w.subRole == AppStrings.subRoleWarga).toList();
-        _state = UserManagementState.loaded;
-        return;
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      debugPrint('Error adding user: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateUser(WargaModel user) async {
+    _setLoading(true);
+    _setError(null);
+
+    try {
+      final updatedUser = await _service.updateUser(user);
+
+      final index = _users.indexWhere((u) => u.id == updatedUser.id);
+      if (index != -1) {
+        _users[index] = updatedUser;
+        notifyListeners();
       }
-      throw UnimplementedError('Filter Warga by RT belum diimplementasi');
 
+      return true;
     } catch (e) {
-      _state = UserManagementState.error;
-      _errorMessage = e.toString();
+      _setError(e.toString());
+      debugPrint('Error updating user: $e');
+      return false;
     } finally {
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
+  Future<bool> deleteUser(int userId) async {
+    _setLoading(true);
+    _setError(null);
 
-  Future<bool> addWarga(WargaModel warga) async {
     try {
-      _state = UserManagementState.loading;
+      await _service.deleteUser(userId);
+
+      _users = _users.where((u) => u.id != userId).toList();
       notifyListeners();
-      await service.addUser(warga);
-      await loadAllWarga();
+
       return true;
     } catch (e) {
-      _state = UserManagementState.error;
-      _errorMessage = e.toString();
-      notifyListeners();
+      _setError(e.toString());
+      debugPrint('Error deleting user: $e');
       return false;
-    }
-  }
-
-  Future<bool> updateWarga(WargaModel warga) async {
-    try {
-      _state = UserManagementState.loading;
-      notifyListeners();
-      await service.updateUser(warga);
-      await loadAllWarga();
-      return true;
-    } catch (e) {
-      _state = UserManagementState.error;
-      _errorMessage = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> deleteWarga(int id) async {
-    try {
-      _state = UserManagementState.loading;
-      notifyListeners();
-      await service.deleteUser(id);
-      await loadAllWarga();
-      return true;
-    } catch (e) {
-      _state = UserManagementState.error;
-      _errorMessage = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  // --- Kelola RT (Digunakan oleh RW) ---
-
-  Future<void> loadAllRT() async {
-    try {
-      _state = UserManagementState.loading;
-      notifyListeners();
-      _rtList = await service.getAllRT();
-      _state = UserManagementState.loaded;
-      _errorMessage = null;
-    } catch (e) {
-      _state = UserManagementState.error;
-      _errorMessage = e.toString();
     } finally {
-      notifyListeners();
+      _setLoading(false);
     }
   }
+
+  void clearError() {
+    _setError(null);
+  }
+
+  Future<void> refresh() async {
+    await Future.wait([loadAllUsers(), loadStats()]);
+  }
+
+  Future<void> loadAllWarga() => loadAllUsers();
+
+  Future<void> loadWargaByRT(String subRole) => loadUsersBySubRole(subRole);
+
+  Future<void> loadAllRT() => loadRTUsers();
+
+  Future<bool> addWarga(WargaModel warga) => addUser(warga);
+
+  Future<bool> updateWarga(WargaModel warga) => updateUser(warga);
+
+  Future<bool> deleteWarga(int userId) => deleteUser(userId);
 }
