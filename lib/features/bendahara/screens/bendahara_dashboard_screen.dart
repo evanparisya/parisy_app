@@ -14,7 +14,8 @@ class BendaharaDashboardScreen extends StatefulWidget {
   const BendaharaDashboardScreen({super.key});
 
   @override
-  State<BendaharaDashboardScreen> createState() => _BendaharaDashboardScreenState();
+  State<BendaharaDashboardScreen> createState() =>
+      _BendaharaDashboardScreenState();
 }
 
 class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
@@ -40,13 +41,16 @@ class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
       _selectedIndex = index;
     });
   }
-  
+
   // Helper function to get the current title
   String get _currentTitle {
     switch (_selectedIndex) {
-      case 0: return 'Bendahara Dashboard';
-      case 1: return 'Kelola Uang & History';
-      default: return 'Bendahara Dashboard';
+      case 0:
+        return 'Bendahara Dashboard';
+      case 1:
+        return 'Kelola Uang & History';
+      default:
+        return 'Bendahara Dashboard';
     }
   }
 
@@ -64,11 +68,19 @@ class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
               child: const Text('Batal'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop(); // Close dialog
-                context.read<AuthController>().logout(); // Perform logout
+                await context.read<AuthController>().logout(); // Perform logout
+                if (mounted) {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/login', (route) => false);
+                }
               },
-              child: const Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+              child: const Text(
+                'Logout',
+                style: TextStyle(color: AppColors.errorRed),
+              ),
             ),
           ],
         );
@@ -81,23 +93,27 @@ class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
     return PopupMenuButton<String>(
       onSelected: (String result) {
         if (result == 'profile') {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
         } else if (result == 'logout') {
           _confirmLogout();
         }
       },
-      icon: CircleAvatar( 
+      icon: CircleAvatar(
         radius: 18,
         backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
-        child: Icon(Icons.monetization_on, size: 24, color: AppColors.primaryGreen), // Ikon Bendahara
+        child: Icon(
+          Icons.monetization_on,
+          size: 24,
+          color: AppColors.primaryGreen,
+        ), // Ikon Bendahara
       ),
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         const PopupMenuItem<String>(
           value: 'profile',
-          child: ListTile(
-            leading: Icon(Icons.person),
-            title: Text('Profil'),
-          ),
+          child: ListTile(leading: Icon(Icons.person), title: Text('Profil')),
         ),
         const PopupMenuItem<String>(
           value: 'logout',
@@ -135,15 +151,15 @@ class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
           ),
         ],
       ),
-      body: _selectedIndex == 0 && financeController.state == FinanceState.loading && summary == null
+      body:
+          _selectedIndex == 0 &&
+              financeController.state == FinanceState.loading &&
+              summary == null
           ? Center(child: CircularProgressIndicator())
           : _widgetOptions.elementAt(_selectedIndex), // Display selected screen
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Dashboard',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Dashboard'),
           BottomNavigationBarItem(
             icon: Icon(Icons.account_balance_wallet),
             label: 'Keuangan',
@@ -175,7 +191,11 @@ class _BendaharaDashboardContent extends StatelessWidget {
           CircleAvatar(
             radius: 30,
             backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
-            child: Icon(Icons.monetization_on, size: 30, color: AppColors.primaryGreen),
+            child: Icon(
+              Icons.monetization_on,
+              size: 30,
+              color: AppColors.primaryGreen,
+            ),
           ),
           SizedBox(width: 16),
           Column(
@@ -208,7 +228,7 @@ class _BendaharaDashboardContent extends StatelessWidget {
     final financeController = context.watch<FinanceController>();
     final currentUser = context.read<AuthController>().currentUser;
     final summary = financeController.summary;
-    
+
     // Use RefreshIndicator to allow pull-to-refresh on the dashboard content
     return RefreshIndicator(
       onRefresh: financeController.loadFinanceData,
@@ -219,14 +239,24 @@ class _BendaharaDashboardContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- Header & Welcome ---
-            _buildProfileHeader(context, currentUser?.name ?? 'Bendahara', currentUser?.subRole ?? AppStrings.subRoleBendahara),
+            _buildProfileHeader(
+              context,
+              currentUser?.name ?? 'Bendahara',
+              currentUser?.subRole ?? AppStrings.subRoleBendahara,
+            ),
             SizedBox(height: 24),
-            
+
             // --- Financial Summary Card ---
-            Text('Ringkasan Keuangan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
+            Text(
+              'Ringkasan Keuangan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryBlack,
+              ),
+            ),
             SizedBox(height: 12),
-            if (summary != null)
-              _FinancialSummaryCard(summary: summary),
+            if (summary != null) _FinancialSummaryCard(summary: summary),
             SizedBox(height: 32),
           ],
         ),
@@ -241,7 +271,11 @@ class _SummaryBox extends StatelessWidget {
   final double value;
   final Color color;
 
-  const _SummaryBox({required this.title, required this.value, required this.color});
+  const _SummaryBox({
+    required this.title,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -254,11 +288,22 @@ class _SummaryBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
+          Text(
+            title,
+            style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray),
+          ),
           SizedBox(height: 4),
           Text(
-            NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(value),
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+            NumberFormat.currency(
+              locale: 'id',
+              symbol: 'Rp ',
+              decimalDigits: 0,
+            ).format(value),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -280,26 +325,40 @@ class _FinancialSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saldo Bersih', style: TextStyle(fontSize: 14, color: AppColors.neutralDarkGray)),
+            Text(
+              'Saldo Bersih',
+              style: TextStyle(fontSize: 14, color: AppColors.neutralDarkGray),
+            ),
             SizedBox(height: 4),
             Text(
-              NumberFormat.currency(locale: 'id', symbol: 'Rp ').format(summary.netBalance),
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+              NumberFormat.currency(
+                locale: 'id',
+                symbol: 'Rp ',
+              ).format(summary.netBalance),
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryGreen,
+              ),
             ),
             SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _SummaryBox(
-                  title: 'Pemasukan',
-                  value: summary.totalIncome,
-                  color: AppColors.primaryGreen,
-                )),
+                Expanded(
+                  child: _SummaryBox(
+                    title: 'Pemasukan',
+                    value: summary.totalIncome,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
                 SizedBox(width: 16),
-                Expanded(child: _SummaryBox(
-                  title: 'Pengeluaran',
-                  value: summary.totalExpense,
-                  color: AppColors.errorRed,
-                )),
+                Expanded(
+                  child: _SummaryBox(
+                    title: 'Pengeluaran',
+                    value: summary.totalExpense,
+                    color: AppColors.errorRed,
+                  ),
+                ),
               ],
             ),
           ],

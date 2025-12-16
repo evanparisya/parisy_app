@@ -1,56 +1,87 @@
-// lib/core/api/api_client.dart
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
-import 'package:parisy_app/core/constants/app_constants.dart';
 
 class ApiClient {
-  late Dio _dio;
+  static const String baseUrl = 'https://nitroir.pythonanywhere.com';
+
+  late final Dio dio;
 
   ApiClient() {
-    _dio = Dio(
+    dio = Dio(
       BaseOptions(
-        baseUrl: AppConstants.baseUrl,
-        connectTimeout: Duration(milliseconds: AppConstants.connectionTimeout),
-        receiveTimeout: Duration(milliseconds: AppConstants.receiveTimeout),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ),
-    );
-
-    // Interceptor untuk logging dan penambahan token
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          // Print request
-          print('REQUEST: ${options.method} ${options.path}');
-          return handler.next(options);
-        },
-        onResponse: (response, handler) {
-          // Print response
-          print(
-            'RESPONSE: ${response.statusCode} ${response.requestOptions.path}',
-          );
-          return handler.next(response);
-        },
-        onError: (error, handler) {
-          // Print error
-          print('ERROR: ${error.message}');
-          return handler.next(error);
-        },
+        baseUrl: baseUrl,
+        connectTimeout: Duration(seconds: 30),
+        receiveTimeout: Duration(seconds: 30),
+        headers: {'Content-Type': 'application/json'},
       ),
     );
   }
 
-  Dio get dio => _dio;
+  Future<Map<String, dynamic>> post(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      // Ensure endpoint starts with /
+      final path = endpoint.startsWith('/') ? endpoint : '/$endpoint';
+      final url = Uri.parse('$baseUrl$path');
 
-  // Set token untuk authenticated requests
-  void setToken(String token) {
-    _dio.options.headers['Authorization'] = 'Bearer $token';
-  }
+      print('API Request: POST $url');
+      print('Request Body: ${json.encode(body)}');
 
-  // Remove token
-  void removeToken() {
-    _dio.options.headers.remove('Authorization');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(body),
+      );
+
+      print('Response Status: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      // Try to decode response
+      Map<String, dynamic> data;
+
+      try {
+        data = json.decode(response.body) as Map<String, dynamic>;
+      } catch (e) {
+        // If response is not JSON
+        data = {
+          'message': response.body.isNotEmpty
+              ? response.body
+              : 'Server mengembalikan response kosong',
+        };
+      }
+
+      // Set success based on status code
+      data['success'] =
+          response.statusCode == 200 || response.statusCode == 201;
+
+      // If status code indicates error but no message, add one
+      if (!data['success'] && data['message'] == null) {
+        data['message'] = 'Request gagal dengan status ${response.statusCode}';
+      }
+
+      return data;
+    } on http.ClientException catch (e) {
+      print('Network error: $e');
+      return {
+        'success': false,
+        'message':
+            'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+      };
+    } on FormatException catch (e) {
+      print('JSON parsing error: $e');
+      return {
+        'success': false,
+        'message': 'Format response dari server tidak valid',
+      };
+    } catch (e) {
+      print('Unexpected error: $e');
+      return {
+        'success': false,
+        'message': 'Terjadi kesalahan: ${e.toString()}',
+      };
+    }
   }
 }

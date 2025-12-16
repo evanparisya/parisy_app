@@ -1,136 +1,129 @@
-// lib/features/auth/controllers/auth_controller.dart
 import 'package:flutter/material.dart';
-import '../models/user_model.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import '../models/user_model.dart';
 
-/// Auth State enum
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
 
-/// Auth Controller - State Management
 class AuthController extends ChangeNotifier {
   final AuthService authService;
 
   AuthState _state = AuthState.initial;
-  UserModel? _currentUser;
   String? _errorMessage;
-  String? _token;
+  UserModel? _currentUser;
 
-  AuthController({required this.authService});
-
-  // Getters
   AuthState get state => _state;
-  UserModel? get currentUser => _currentUser;
   String? get errorMessage => _errorMessage;
-  String? get token => _token;
-  bool get isAuthenticated => _state == AuthState.authenticated;
+  UserModel? get currentUser => _currentUser;
+  bool get isAuthenticated =>
+      _state == AuthState.authenticated && _currentUser != null;
 
-  /// Login user
-  Future<bool> login({required String email, required String password}) async {
-    try {
-      _state = AuthState.loading;
-      notifyListeners();
-
-      final response = await authService.login(
-        email: email,
-        password: password,
-      );
-
-      _token = response.token;
-      _currentUser = response.user;
-      authService.apiClient.setToken(_token!);
-
-      _state = AuthState.authenticated;
-      _errorMessage = null;
-      notifyListeners();
-
-      return true;
-    } catch (e) {
-      _state = AuthState.error;
-      _errorMessage = e.toString().contains('Exception: ') ? e.toString().substring(11) : e.toString();
-      notifyListeners();
-      return false;
-    }
+  AuthController({required this.authService}) {
+    _checkAuthentication();
   }
 
-  /// Register user
-  Future<bool> register({
-    required String email,
-    required String password,
-    required String name,
-  }) async {
-    try {
-      _state = AuthState.loading;
-      notifyListeners();
-
-      final response = await authService.register(
-        email: email,
-        password: password,
-        name: name,
-      );
-
-      _token = response.token;
-      _currentUser = response.user;
-      authService.apiClient.setToken(_token!);
-
-      _state = AuthState.authenticated;
-      _errorMessage = null;
-      notifyListeners();
-
-      return true;
-    } catch (e) {
-      _state = AuthState.error;
-      _errorMessage = e.toString().contains('Exception: ') ? e.toString().substring(11) : e.toString();
-      notifyListeners();
-      return false;
-    }
+  void _setState(AuthState newState) {
+    _state = newState;
+    notifyListeners();
   }
 
-  /// Logout user
-  Future<void> logout() async {
-    try {
-      _state = AuthState.loading;
-      notifyListeners();
-
-      await authService.logout();
-
-      _token = null;
-      _currentUser = null;
-
-      _state = AuthState.unauthenticated;
-      _errorMessage = null;
-      notifyListeners();
-    } catch (e) {
-      _state = AuthState.error;
-      _errorMessage = e.toString();
-      notifyListeners();
-    }
+  void _setError(String message) {
+    _errorMessage = message;
+    _setState(AuthState.error);
   }
 
-  /// Verify and restore token
-  Future<void> verifyToken(String token) async {
-    try {
-      _state = AuthState.loading;
-      notifyListeners();
-
-      authService.apiClient.setToken(token);
-      _token = token;
-
-      final user = await authService.verifyToken();
-      _currentUser = user;
-
-      _state = AuthState.authenticated;
-      _errorMessage = null;
-      notifyListeners();
-    } catch (e) {
-      _state = AuthState.unauthenticated;
-      _errorMessage = e.toString();
-      notifyListeners();
-    }
-  }
-
-  /// Clear error message
   void clearError() {
     _errorMessage = null;
-    notifyListeners();
+    if (_state == AuthState.error) {
+      _setState(AuthState.initial);
+    }
+  }
+
+  // Check authentication on init
+  Future<void> _checkAuthentication() async {
+    final isLoggedIn = await authService.isLoggedIn();
+    if (isLoggedIn) {
+      await _loadUserFromPrefs();
+      if (_currentUser != null) {
+        _setState(AuthState.authenticated);
+      } else {
+        _setState(AuthState.unauthenticated);
+      }
+    } else {
+      _setState(AuthState.unauthenticated);
+    }
+  }
+
+  // Load user from SharedPreferences
+  Future<void> _loadUserFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('user');
+      if (userJson != null) {
+        final userData = json.decode(userJson);
+        _currentUser = UserModel.fromJson(userData);
+      }
+    } catch (e) {
+      _currentUser = null;
+    }
+  }
+
+  // Login
+  Future<void> login({required String email, required String password}) async {
+    _setState(AuthState.loading);
+    _errorMessage = null;
+
+    final result = await authService.login(email, password);
+
+    if (result['success']) {
+      // Load user data
+      await _loadUserFromPrefs();
+      _setState(AuthState.authenticated);
+    } else {
+      _setError(result['message'] ?? 'Login gagal');
+    }
+  }
+
+  // Register
+  Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+    required String address,
+    required String phone,
+    required String role,
+    required String subRole,
+  }) async {
+    _setState(AuthState.loading);
+    _errorMessage = null;
+
+    final result = await authService.register(
+      name,
+      email,
+      address,
+      phone,
+      password,
+      role,
+      subRole,
+    );
+
+    if (result['success']) {
+      _setState(AuthState.initial);
+    } else {
+      _setError(result['message'] ?? 'Registrasi gagal');
+    }
+  }
+
+  // Logout
+  Future<void> logout() async {
+    await authService.logout();
+    _currentUser = null;
+    _setState(AuthState.unauthenticated);
+  }
+
+  // Check auth
+  Future<bool> isLoggedIn() async {
+    return await authService.isLoggedIn();
   }
 }

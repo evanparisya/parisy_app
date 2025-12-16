@@ -7,6 +7,13 @@ import 'package:parisy_app/core/constants/dummy_data.dart';
 import '../controllers/auth_controller.dart';
 import 'register_screen.dart';
 
+// Import dashboard screens untuk navigation
+import '../../admin/screens/admin_dashboard_screen.dart';
+import '../../rt/screens/rt_dashboard_screen.dart';
+import '../../rw/screens/rw_dashboard_screen.dart';
+import '../../bendahara/screens/bendahara_dashboard_screen.dart';
+import '../../sekretaris/screens/sekretaris_dashboard_screen.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -26,8 +33,62 @@ class _LoginScreenState extends State<LoginScreen> {
     _passwordController = TextEditingController();
 
     // Dummy data untuk testing - gunakan salah satu user manajemen
-    _emailController.text = DummyData.mockUsers.keys.firstWhere((k) => k == 'admin@gmail.com', orElse: () => 'warga@gmail.com');
+    _emailController.text = DummyData.mockUsers.keys.firstWhere(
+      (k) => k == 'admin@gmail.com',
+      orElse: () => 'warga@gmail.com',
+    );
     _passwordController.text = 'password';
+  }
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final authController = context.read<AuthController>();
+
+    await authController.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    // Check if login was successful
+    if (mounted &&
+        authController.state == AuthState.authenticated &&
+        authController.currentUser != null) {
+      _navigateBasedOnRole(authController.currentUser!.subRole);
+    }
+  }
+
+  void _navigateBasedOnRole(String subRole) {
+    // Navigate based on sub_role
+    Widget targetScreen;
+
+    switch (subRole) {
+      case AppStrings.subRoleAdmin:
+        targetScreen = AdminDashboardScreen();
+        break;
+      case AppStrings.subRoleRT:
+        targetScreen = RtDashboardScreen();
+        break;
+      case AppStrings.subRoleRW:
+        targetScreen = RwDashboardScreen();
+        break;
+      case AppStrings.subRoleBendahara:
+        targetScreen = BendaharaDashboardScreen();
+        break;
+      case AppStrings.subRoleSekretaris:
+        targetScreen = SekretarisDashboardScreen();
+        break;
+      case AppStrings.subRoleWarga:
+      default:
+        // Navigate to warga/user home using the named route
+        Navigator.of(context).pushReplacementNamed('/user_home');
+        return;
+    }
+
+    // For admin and management roles
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (context) => targetScreen));
   }
 
   @override
@@ -153,16 +214,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     return PrimaryButton(
                       label: AppStrings.login,
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          context.read<AuthController>().login(
-                            email: _emailController.text,
-                            password: _passwordController.text,
-                          );
+                        if (!isLoading) {
+                          _handleLogin();
                         }
                       },
                       isLoading: isLoading,
                       // Warna tombol utama hitam sesuai desain (override default green)
-                      backgroundColor: AppColors.primaryBlack, 
+                      backgroundColor: AppColors.primaryBlack,
                     );
                   },
                 ),
@@ -174,9 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text(
                         AppStrings.dontHaveAccount,
-                        style: TextStyle(
-                          color: AppColors.neutralDarkGray,
-                        ),
+                        style: TextStyle(color: AppColors.neutralDarkGray),
                       ),
                       SizedBox(width: 8),
                       GestureDetector(
