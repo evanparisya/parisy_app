@@ -5,6 +5,7 @@ import 'package:parisy_app/core/constants/app_constants.dart';
 import 'package:parisy_app/features/auth/controllers/auth_controller.dart';
 import 'package:parisy_app/features/management/users/controllers/user_management_controller.dart';
 import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart';
+import 'package:parisy_app/features/user/profile/screens/profile_screen.dart'; // Import ProfileScreen
 import 'rw_rt_management_screen.dart';
 import 'rw_warga_screen.dart';
 import 'rw_products_screen.dart';
@@ -17,6 +18,8 @@ class RwDashboardScreen extends StatefulWidget {
 }
 
 class _RwDashboardScreenState extends State<RwDashboardScreen> {
+  int _selectedIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +31,188 @@ class _RwDashboardScreenState extends State<RwDashboardScreen> {
     });
   }
 
+  // List of screens for BottomNavBar (4 items)
+  late final List<Widget> _widgetOptions = <Widget>[
+    const _RwDashboardContent(), // Tab 0: Dashboard Content
+    const RwRtManagementScreen(), // Tab 1: Kelola RT
+    const RwWargaScreen(),        // Tab 2: Data Warga
+    const RwProductsScreen(),     // Tab 3: Kelola Barang
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+  
+  // Helper function to get the current title
+  String get _currentTitle {
+    switch (_selectedIndex) {
+      case 0: return 'RW Dashboard';
+      case 1: return 'Kelola Data Ketua RT';
+      case 2: return 'Data Warga (Read Only)';
+      case 3: return 'Kelola Barang Jual Beli';
+      default: return 'RW Dashboard';
+    }
+  }
+
+  // New function for Logout Confirmation
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Logout'),
+          content: const Text('Apakah Anda yakin ingin keluar dari akun ini?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                context.read<AuthController>().logout(); // Perform logout
+              },
+              child: const Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // New function to show profile/logout menu
+  Widget _buildProfileMenu(BuildContext context) {
+    return PopupMenuButton<String>(
+      onSelected: (String result) {
+        if (result == 'profile') {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
+        } else if (result == 'logout') {
+          _confirmLogout();
+        }
+      },
+      icon: CircleAvatar( 
+        radius: 18,
+        backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
+        child: Icon(Icons.security, size: 24, color: AppColors.primaryGreen), // Ikon RW
+      ),
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'profile',
+          child: ListTile(
+            leading: Icon(Icons.person),
+            title: Text('Profil'),
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'logout',
+          child: ListTile(
+            leading: Icon(Icons.logout, color: AppColors.errorRed),
+            title: Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        title: Text(
+          _currentTitle, // Use dynamic title
+          style: TextStyle(
+            color: AppColors.primaryBlack,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: _buildProfileMenu(context), // Menu Profil/Logout
+          ),
+        ],
+      ),
+      body: _widgetOptions.elementAt(_selectedIndex), // Display selected screen
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.group_add),
+            label: 'Kelola RT',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_alt),
+            label: 'Warga',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_bag),
+            label: 'Barang',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: AppColors.primaryGreen,
+        unselectedItemColor: AppColors.neutralDarkGray,
+        onTap: _onItemTapped,
+      ),
+    );
+  }
+}
+
+// Extracting the original dashboard content into a separate widget
+class _RwDashboardContent extends StatelessWidget {
+  const _RwDashboardContent();
+
+  Widget _buildProfileHeader(BuildContext context, String name, String role) {
+    final currentUser = context.read<AuthController>().currentUser;
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.neutralGray,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
+            child: Icon(Icons.security, size: 30, color: AppColors.primaryGreen),
+          ),
+          SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                currentUser?.name ?? name,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryBlack,
+                ),
+              ),
+              Text(
+                'Peran: ${currentUser?.subRole.toUpperCase() ?? role.toUpperCase()}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.neutralDarkGray,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final userController = context.watch<UserManagementController>();
@@ -37,33 +222,13 @@ class _RwDashboardScreenState extends State<RwDashboardScreen> {
     // Calculate total Warga (Warga subRole)
     final totalWarga = userController.wargaList.where((w) => w.subRole == AppStrings.subRoleWarga).length;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: Text(
-          'RW Dashboard',
-          style: TextStyle(
-            color: AppColors.primaryBlack,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout, color: AppColors.errorRed),
-            onPressed: () => context.read<AuthController>().logout(),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
+    return SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- Header & Welcome ---
-            _buildProfileHeader(currentUser?.name ?? 'Ketua RW', currentUser?.subRole ?? AppStrings.subRoleRW),
+            _buildProfileHeader(context, currentUser?.name ?? 'Ketua RW', currentUser?.subRole ?? AppStrings.subRoleRW),
             SizedBox(height: 24),
             
             // --- Statistics Summary ---
@@ -94,87 +259,13 @@ class _RwDashboardScreenState extends State<RwDashboardScreen> {
               ],
             ),
             SizedBox(height: 32),
-
-            // --- Menu Manajemen ---
-            Text('Menu Manajemen RW', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-            SizedBox(height: 12),
-
-            _AdminMenuButton(
-              icon: Icons.group_add,
-              title: 'Kelola Data Ketua RT',
-              subtitle: 'Tambah, ubah, dan hapus data Ketua RT',
-              color: 0xFFF59E0B,
-              onTap: () => _navigateTo(RwRtManagementScreen()),
-            ),
-            _AdminMenuButton(
-              icon: Icons.visibility,
-              title: 'Data Warga (Read Only)',
-              subtitle: 'Lihat data seluruh warga di lingkungan RW',
-              color: 0xFF3B82F6,
-              onTap: () => _navigateTo(RwWargaScreen()),
-            ),
-            _AdminMenuButton(
-              icon: Icons.shopping_bag,
-              title: 'Kelola Barang Jual Beli',
-              subtitle: 'Buat, lihat, dan ubah barang (CRU)',
-              color: 0xFFEC4899,
-              onTap: () => _navigateTo(RwProductsScreen()),
-            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader(String name, String role) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.neutralGray,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
-            child: Icon(Icons.security, size: 30, color: AppColors.primaryGreen),
-          ),
-          SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryBlack,
-                ),
-              ),
-              Text(
-                'Peran: ${role.toUpperCase()}',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.neutralDarkGray,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _navigateTo(Widget screen) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
+      );
   }
 }
 
-// Helper Widgets (Disalin agar konsisten dan mandiri)
+// Helper Widgets
 class _StatisticCard extends StatelessWidget {
   final String title;
   final String value;
@@ -212,72 +303,6 @@ class _StatisticCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AdminMenuButton extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final int color;
-  final VoidCallback onTap;
-
-  const _AdminMenuButton({required this.icon, required this.title, required this.subtitle, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.neutralGray, width: 1),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Color(color).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: Color(color), size: 24),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryBlack,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.neutralDarkGray,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.arrow_forward_ios, color: AppColors.neutralDarkGray, size: 16),
-            ],
-          ),
-        ),
       ),
     );
   }

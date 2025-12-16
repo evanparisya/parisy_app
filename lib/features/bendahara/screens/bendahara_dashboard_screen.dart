@@ -7,6 +7,7 @@ import 'package:parisy_app/features/management/finance/controllers/finance_contr
 import 'package:parisy_app/features/management/finance/models/financial_report_model.dart';
 import 'package:parisy_app/core/widgets/common_widgets.dart';
 import 'package:intl/intl.dart';
+import 'package:parisy_app/features/user/profile/screens/profile_screen.dart'; // Import ProfileScreen
 import 'bendahara_finance_screen.dart';
 
 class BendaharaDashboardScreen extends StatefulWidget {
@@ -17,6 +18,8 @@ class BendaharaDashboardScreen extends StatefulWidget {
 }
 
 class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
+  int _selectedIndex = 0;
+
   @override
   void initState() {
     super.initState();
@@ -26,10 +29,90 @@ class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
     });
   }
 
+  // List of screens for BottomNavBar (2 items)
+  late final List<Widget> _widgetOptions = <Widget>[
+    _BendaharaDashboardContent(), // Tab 0: Dashboard Content
+    const BendaharaFinanceScreen(), // Tab 1: Kelola Keuangan
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+  
+  // Helper function to get the current title
+  String get _currentTitle {
+    switch (_selectedIndex) {
+      case 0: return 'Bendahara Dashboard';
+      case 1: return 'Kelola Uang & History';
+      default: return 'Bendahara Dashboard';
+    }
+  }
+
+  // New function for Logout Confirmation
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Logout'),
+          content: const Text('Apakah Anda yakin ingin keluar dari akun ini?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                context.read<AuthController>().logout(); // Perform logout
+              },
+              child: const Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // New function to show profile/logout menu
+  Widget _buildProfileMenu(BuildContext context) {
+    return PopupMenuButton<String>(
+      onSelected: (String result) {
+        if (result == 'profile') {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
+        } else if (result == 'logout') {
+          _confirmLogout();
+        }
+      },
+      icon: CircleAvatar( 
+        radius: 18,
+        backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
+        child: Icon(Icons.monetization_on, size: 24, color: AppColors.primaryGreen), // Ikon Bendahara
+      ),
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'profile',
+          child: ListTile(
+            leading: Icon(Icons.person),
+            title: Text('Profil'),
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'logout',
+          child: ListTile(
+            leading: Icon(Icons.logout, color: AppColors.errorRed),
+            title: Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final financeController = context.watch<FinanceController>();
-    final currentUser = context.read<AuthController>().currentUser;
     final summary = financeController.summary;
 
     return Scaffold(
@@ -39,59 +122,48 @@ class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         title: Text(
-          'Bendahara Dashboard',
+          _currentTitle,
           style: TextStyle(
             color: AppColors.primaryBlack,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.logout, color: AppColors.errorRed),
-            onPressed: () => context.read<AuthController>().logout(),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: _buildProfileMenu(context), // Menu Profil/Logout
           ),
         ],
       ),
-      body: financeController.state == FinanceState.loading && summary == null
+      body: _selectedIndex == 0 && financeController.state == FinanceState.loading && summary == null
           ? Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: financeController.loadFinanceData,
-              child: SingleChildScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // --- Header & Welcome ---
-                    _buildProfileHeader(currentUser?.name ?? 'Bendahara', currentUser?.subRole ?? AppStrings.subRoleBendahara),
-                    SizedBox(height: 24),
-                    
-                    // --- Financial Summary Card ---
-                    Text('Ringkasan Keuangan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-                    SizedBox(height: 12),
-                    if (summary != null)
-                      _FinancialSummaryCard(summary: summary),
-                    SizedBox(height: 32),
-
-                    // --- Menu Manajemen ---
-                    Text('Menu Keuangan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-                    SizedBox(height: 12),
-
-                    _AdminMenuButton(
-                      icon: Icons.account_balance_wallet,
-                      title: 'Kelola Uang & History',
-                      subtitle: 'Atur pemasukan, pengeluaran, dan cek riwayat',
-                      color: 0xFF10B981,
-                      onTap: () => _navigateTo(BendaharaFinanceScreen()),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          : _widgetOptions.elementAt(_selectedIndex), // Display selected screen
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Keuangan',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: const Color(0xFF10B981),
+        unselectedItemColor: AppColors.neutralDarkGray,
+        onTap: _onItemTapped,
+      ),
     );
   }
+}
 
-  Widget _buildProfileHeader(String name, String role) {
+// Extracting the original dashboard content into a separate widget
+class _BendaharaDashboardContent extends StatelessWidget {
+  const _BendaharaDashboardContent();
+
+  Widget _buildProfileHeader(BuildContext context, String name, String role) {
+    final currentUser = context.read<AuthController>().currentUser;
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -110,7 +182,7 @@ class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                name,
+                currentUser?.name ?? name,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -118,7 +190,7 @@ class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
                 ),
               ),
               Text(
-                'Peran: ${role.toUpperCase()}',
+                'Peran: ${currentUser?.subRole.toUpperCase() ?? role.toUpperCase()}',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.neutralDarkGray,
@@ -131,15 +203,39 @@ class _BendaharaDashboardScreenState extends State<BendaharaDashboardScreen> {
     );
   }
 
-  void _navigateTo(Widget screen) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
+  @override
+  Widget build(BuildContext context) {
+    final financeController = context.watch<FinanceController>();
+    final currentUser = context.read<AuthController>().currentUser;
+    final summary = financeController.summary;
+    
+    // Use RefreshIndicator to allow pull-to-refresh on the dashboard content
+    return RefreshIndicator(
+      onRefresh: financeController.loadFinanceData,
+      child: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Header & Welcome ---
+            _buildProfileHeader(context, currentUser?.name ?? 'Bendahara', currentUser?.subRole ?? AppStrings.subRoleBendahara),
+            SizedBox(height: 24),
+            
+            // --- Financial Summary Card ---
+            Text('Ringkasan Keuangan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
+            SizedBox(height: 12),
+            if (summary != null)
+              _FinancialSummaryCard(summary: summary),
+            SizedBox(height: 32),
+          ],
+        ),
+      ),
     );
   }
 }
 
-// --- Helper Widgets (Disalin dari Admin Dashboard) ---
+// --- Helper Widgets
 class _SummaryBox extends StatelessWidget {
   final String title;
   final double value;
@@ -207,72 +303,6 @@ class _FinancialSummaryCard extends StatelessWidget {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AdminMenuButton extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final int color;
-  final VoidCallback onTap;
-
-  const _AdminMenuButton({required this.icon, required this.title, required this.subtitle, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.neutralGray, width: 1),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Color(color).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: Color(color), size: 24),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryBlack,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.neutralDarkGray,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.arrow_forward_ios, color: AppColors.neutralDarkGray, size: 16),
-            ],
-          ),
         ),
       ),
     );

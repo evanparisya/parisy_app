@@ -44,12 +44,7 @@ class ProfileScreen extends StatelessWidget {
                 _ProfileMenuItem(title: 'Payment Methods', icon: Icons.credit_card, onTap: () { /* Navigate to Payments */ }),
                 _ProfileMenuItem(title: 'Settings', icon: Icons.settings_outlined, onTap: () { /* Navigate to Settings */ }),
                 _ProfileMenuItem(title: 'Help & Support', icon: Icons.help_outline, onTap: () { /* Navigate to Help */ }),
-                _ProfileMenuItem(
-                  title: 'Logout',
-                  icon: Icons.logout,
-                  color: AppColors.errorRed,
-                  onTap: () => controller.logout(),
-                ),
+                // Opsi Logout dihapus karena sudah ada di App Bar Dashboard
               ],
             ),
           );

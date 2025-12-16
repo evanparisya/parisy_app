@@ -5,6 +5,7 @@ import 'package:parisy_app/core/constants/app_constants.dart';
 import 'package:parisy_app/features/auth/controllers/auth_controller.dart';
 import 'package:parisy_app/features/management/users/controllers/user_management_controller.dart';
 import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart';
+import 'package:parisy_app/features/user/profile/screens/profile_screen.dart';
 import 'rt_warga_screen.dart';
 import 'rt_products_screen.dart';
 
@@ -16,23 +17,107 @@ class RtDashboardScreen extends StatefulWidget {
 }
 
 class _RtDashboardScreenState extends State<RtDashboardScreen> {
+  int _selectedIndex = 0;
+
   @override
   void initState() {
     super.initState();
     // Load initial data for RT (Warga RT-nya saja)
     Future.microtask(() {
-      // Asumsi RT hanya bisa melihat warga biasa dan dirinya sendiri
       context.read<UserManagementController>().loadWargaByRT(AppStrings.subRoleRT); 
       context.read<MarketplaceController>().loadInitialData(); // Untuk total barang
     });
   }
 
+  // List of screens for BottomNavBar (3 items)
+  late final List<Widget> _widgetOptions = <Widget>[
+    const _RtDashboardContent(), // Tab 0: Dashboard Content
+    const RtWargaScreen(),      // Tab 1: Data Warga
+    const RtProductsScreen(),   // Tab 2: Kelola Barang
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  // Helper function to get the current title
+  String get _currentTitle {
+    switch (_selectedIndex) {
+      case 0:
+        return 'RT Dashboard';
+      case 1:
+        return 'Data Warga (Read Only)';
+      case 2:
+        return 'Kelola Barang Jual Beli';
+      default:
+        return 'RT Dashboard';
+    }
+  }
+
+  // New function for Logout Confirmation
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Konfirmasi Logout'),
+          content: const Text('Apakah Anda yakin ingin keluar dari akun ini?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                context.read<AuthController>().logout(); // Perform logout
+              },
+              child: const Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // New function to show profile/logout menu
+  Widget _buildProfileMenu(BuildContext context) {
+    return PopupMenuButton<String>(
+      onSelected: (String result) {
+        if (result == 'profile') {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
+        } else if (result == 'logout') {
+          _confirmLogout();
+        }
+      },
+      icon: CircleAvatar( 
+        radius: 18,
+        backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
+        child: Icon(Icons.group, size: 24, color: AppColors.primaryGreen), // Ikon RT
+      ),
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'profile',
+          child: ListTile(
+            leading: Icon(Icons.person),
+            title: Text('Profil'),
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'logout',
+          child: ListTile(
+            leading: Icon(Icons.logout, color: AppColors.errorRed),
+            title: Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final userController = context.watch<UserManagementController>();
-    final marketplaceController = context.watch<MarketplaceController>();
-    final currentUser = context.read<AuthController>().currentUser;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -40,76 +125,50 @@ class _RtDashboardScreenState extends State<RtDashboardScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         title: Text(
-          'RT Dashboard',
+          _currentTitle, // Use dynamic title
           style: TextStyle(
             color: AppColors.primaryBlack,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.logout, color: AppColors.errorRed),
-            onPressed: () => context.read<AuthController>().logout(),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: _buildProfileMenu(context), // Menu Profil/Logout
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- Header & Welcome ---
-            _buildProfileHeader(currentUser?.name ?? 'Ketua RT', currentUser?.subRole ?? AppStrings.subRoleRT),
-            SizedBox(height: 24),
-            
-            // --- Statistics Summary ---
-            Text('Ringkasan Aset', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _StatisticCard(
-                  title: 'Warga RT', 
-                  // Hanya menampilkan jumlah warga yang dimuat (Warga biasa + dirinya)
-                  value: userController.wargaList.length.toString(), 
-                  icon: Icons.people_alt,
-                  color: 0xFF3B82F6,
-                )),
-                SizedBox(width: 12),
-                Expanded(child: _StatisticCard(
-                  title: 'Barang Jual Beli', 
-                  value: marketplaceController.products.length.toString(), 
-                  icon: Icons.storefront,
-                  color: 0xFFEC4899,
-                )),
-              ],
-            ),
-            SizedBox(height: 32),
-
-            // --- Menu Manajemen ---
-            Text('Menu Manajemen', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-            SizedBox(height: 12),
-
-            _AdminMenuButton(
-              icon: Icons.visibility,
-              title: 'Data Warga (Read Only)',
-              subtitle: 'Lihat data warga di lingkungan RT Anda',
-              color: 0xFF3B82F6,
-              onTap: () => _navigateTo(RtWargaScreen()),
-            ),
-            _AdminMenuButton(
-              icon: Icons.shopping_bag,
-              title: 'Kelola Barang Jual Beli',
-              subtitle: 'Buat, lihat, dan ubah barang (CRU)',
-              color: 0xFFEC4899,
-              onTap: () => _navigateTo(RtProductsScreen()),
-            ),
-          ],
-        ),
+      body: _widgetOptions.elementAt(_selectedIndex), // Display selected screen
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_alt),
+            label: 'Warga',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_bag),
+            label: 'Barang',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: const Color(0xFF3B82F6),
+        unselectedItemColor: AppColors.neutralDarkGray,
+        onTap: _onItemTapped,
       ),
     );
   }
+}
 
-  Widget _buildProfileHeader(String name, String role) {
+// Extracting the original dashboard content into a separate widget
+class _RtDashboardContent extends StatelessWidget {
+  const _RtDashboardContent();
+
+  Widget _buildProfileHeader(BuildContext context, String name, String role) {
+    final currentUser = context.read<AuthController>().currentUser;
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -128,7 +187,7 @@ class _RtDashboardScreenState extends State<RtDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                name,
+                currentUser?.name ?? name,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -136,7 +195,7 @@ class _RtDashboardScreenState extends State<RtDashboardScreen> {
                 ),
               ),
               Text(
-                'Peran: ${role.toUpperCase()}',
+                'Peran: ${currentUser?.subRole.toUpperCase() ?? role.toUpperCase()}',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.neutralDarkGray,
@@ -149,15 +208,49 @@ class _RtDashboardScreenState extends State<RtDashboardScreen> {
     );
   }
 
-  void _navigateTo(Widget screen) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
+  @override
+  Widget build(BuildContext context) {
+    final userController = context.watch<UserManagementController>();
+    final marketplaceController = context.watch<MarketplaceController>();
+    final currentUser = context.read<AuthController>().currentUser;
+
+    return SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Header & Welcome ---
+            _buildProfileHeader(context, currentUser?.name ?? 'Ketua RT', currentUser?.subRole ?? AppStrings.subRoleRT),
+            SizedBox(height: 24),
+            
+            // --- Statistics Summary ---
+            Text('Ringkasan Aset', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
+            SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _StatisticCard(
+                  title: 'Warga RT', 
+                  value: userController.wargaList.length.toString(), 
+                  icon: Icons.people_alt,
+                  color: 0xFF3B82F6,
+                )),
+                SizedBox(width: 12),
+                Expanded(child: _StatisticCard(
+                  title: 'Barang Jual Beli', 
+                  value: marketplaceController.products.length.toString(), 
+                  icon: Icons.storefront,
+                  color: 0xFFEC4899,
+                )),
+              ],
+            ),
+            SizedBox(height: 32),
+          ],
+        ),
+      );
   }
 }
 
-// Helper Widgets (Disalin agar konsisten dengan Admin Dashboard)
+// Helper Widgets
 class _StatisticCard extends StatelessWidget {
   final String title;
   final String value;
@@ -195,72 +288,6 @@ class _StatisticCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AdminMenuButton extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final int color;
-  final VoidCallback onTap;
-
-  const _AdminMenuButton({required this.icon, required this.title, required this.subtitle, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.neutralGray, width: 1),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Color(color).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: Color(color), size: 24),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryBlack,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.neutralDarkGray,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.arrow_forward_ios, color: AppColors.neutralDarkGray, size: 16),
-            ],
-          ),
-        ),
       ),
     );
   }
