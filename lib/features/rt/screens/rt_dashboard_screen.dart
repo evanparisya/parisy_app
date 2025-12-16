@@ -24,16 +24,20 @@ class _RtDashboardScreenState extends State<RtDashboardScreen> {
     super.initState();
     // Load initial data for RT (Warga RT-nya saja)
     Future.microtask(() {
-      context.read<UserManagementController>().loadWargaByRT(AppStrings.subRoleRT); 
-      context.read<MarketplaceController>().loadInitialData(); // Untuk total barang
+      context.read<UserManagementController>().loadWargaByRT(
+        AppStrings.subRoleRT,
+      );
+      context
+          .read<MarketplaceController>()
+          .loadInitialData(); // Untuk total barang
     });
   }
 
   // List of screens for BottomNavBar (3 items)
   late final List<Widget> _widgetOptions = <Widget>[
     const _RtDashboardContent(), // Tab 0: Dashboard Content
-    const RtWargaScreen(),      // Tab 1: Data Warga
-    const RtProductsScreen(),   // Tab 2: Kelola Barang
+    const RtWargaScreen(), // Tab 1: Data Warga
+    const RtProductsScreen(), // Tab 2: Kelola Barang
   ];
 
   void _onItemTapped(int index) {
@@ -70,11 +74,19 @@ class _RtDashboardScreenState extends State<RtDashboardScreen> {
               child: const Text('Batal'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop(); // Close dialog
-                context.read<AuthController>().logout(); // Perform logout
+                await context.read<AuthController>().logout(); // Perform logout
+                if (mounted) {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/login', (route) => false);
+                }
               },
-              child: const Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+              child: const Text(
+                'Logout',
+                style: TextStyle(color: AppColors.errorRed),
+              ),
             ),
           ],
         );
@@ -87,23 +99,27 @@ class _RtDashboardScreenState extends State<RtDashboardScreen> {
     return PopupMenuButton<String>(
       onSelected: (String result) {
         if (result == 'profile') {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
         } else if (result == 'logout') {
           _confirmLogout();
         }
       },
-      icon: CircleAvatar( 
+      icon: CircleAvatar(
         radius: 18,
         backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
-        child: Icon(Icons.group, size: 24, color: AppColors.primaryGreen), // Ikon RT
+        child: Icon(
+          Icons.group,
+          size: 24,
+          color: AppColors.primaryGreen,
+        ), // Ikon RT
       ),
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         const PopupMenuItem<String>(
           value: 'profile',
-          child: ListTile(
-            leading: Icon(Icons.person),
-            title: Text('Profil'),
-          ),
+          child: ListTile(leading: Icon(Icons.person), title: Text('Profil')),
         ),
         const PopupMenuItem<String>(
           value: 'logout',
@@ -141,14 +157,8 @@ class _RtDashboardScreenState extends State<RtDashboardScreen> {
       body: _widgetOptions.elementAt(_selectedIndex), // Display selected screen
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_alt),
-            label: 'Warga',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.people_alt), label: 'Warga'),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_bag),
             label: 'Barang',
@@ -215,38 +225,53 @@ class _RtDashboardContent extends StatelessWidget {
     final currentUser = context.read<AuthController>().currentUser;
 
     return SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- Header & Welcome ---
-            _buildProfileHeader(context, currentUser?.name ?? 'Ketua RT', currentUser?.subRole ?? AppStrings.subRoleRT),
-            SizedBox(height: 24),
-            
-            // --- Statistics Summary ---
-            Text('Ringkasan Aset', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _StatisticCard(
-                  title: 'Warga RT', 
-                  value: userController.wargaList.length.toString(), 
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // --- Header & Welcome ---
+          _buildProfileHeader(
+            context,
+            currentUser?.name ?? 'Ketua RT',
+            currentUser?.subRole ?? AppStrings.subRoleRT,
+          ),
+          SizedBox(height: 24),
+
+          // --- Statistics Summary ---
+          Text(
+            'Ringkasan Aset',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryBlack,
+            ),
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _StatisticCard(
+                  title: 'Warga RT',
+                  value: userController.wargaList.length.toString(),
                   icon: Icons.people_alt,
                   color: 0xFF3B82F6,
-                )),
-                SizedBox(width: 12),
-                Expanded(child: _StatisticCard(
-                  title: 'Barang Jual Beli', 
-                  value: marketplaceController.products.length.toString(), 
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _StatisticCard(
+                  title: 'Barang Jual Beli',
+                  value: marketplaceController.products.length.toString(),
                   icon: Icons.storefront,
                   color: 0xFFEC4899,
-                )),
-              ],
-            ),
-            SizedBox(height: 32),
-          ],
-        ),
-      );
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 32),
+        ],
+      ),
+    );
   }
 }
 
@@ -256,7 +281,12 @@ class _StatisticCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final int color;
-  const _StatisticCard({required this.title, required this.value, required this.icon, required this.color});
+  const _StatisticCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -282,10 +312,7 @@ class _StatisticCard extends StatelessWidget {
           ),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.neutralDarkGray,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray),
           ),
         ],
       ),

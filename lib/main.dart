@@ -33,15 +33,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       // FIX 1 & 3: Akses static method dengan nama kelas InjectionContainer
-      providers: InjectionContainer.provideProviders(), 
+      providers: InjectionContainer.provideProviders(),
       child: MaterialApp(
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: AppColors.primaryGreen,
-          ),
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryGreen),
           fontFamily: 'Poppins',
         ),
         // Definisikan rute global jika diperlukan
@@ -64,7 +62,8 @@ class RootApp extends StatelessWidget {
     // Perbaikan: Hapus local variable authController jika tidak digunakan di RootApp
     return Consumer<AuthController>(
       builder: (context, authController, _) {
-        if (authController.isAuthenticated && authController.currentUser != null) {
+        if (authController.isAuthenticated &&
+            authController.currentUser != null) {
           final subRole = authController.currentUser!.subRole;
 
           // Pisahkan routing berdasarkan sub_role manajemen
@@ -108,7 +107,7 @@ class _MainNavigationAppState extends State<MainNavigationApp> {
     const OrderHistoryScreen(),
     const CartScreen(),
   ];
-  
+
   @override
   void initState() {
     super.initState();
@@ -121,19 +120,16 @@ class _MainNavigationAppState extends State<MainNavigationApp> {
     return PopScope(
       canPop: false, // Mencegah kembali dari Home
       child: Scaffold(
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _screens,
-        ),
+        body: IndexedStack(index: _currentIndex, children: _screens),
         bottomNavigationBar: Consumer<CartController>(
           builder: (context, cartController, _) {
             // FIX 2: Ganti itemUniqueCount (yang tidak terdefinisi) dengan itemCount (yang benar)
-            final cartItemCount = cartController.itemCount; 
+            final cartItemCount = cartController.itemCount;
 
             return BottomNavigationBar(
               currentIndex: _currentIndex,
               backgroundColor: AppColors.background,
-              selectedItemColor: AppColors.primaryBlack, 
+              selectedItemColor: AppColors.primaryBlack,
               unselectedItemColor: AppColors.neutralDarkGray,
               showSelectedLabels: false,
               showUnselectedLabels: false,
@@ -142,9 +138,25 @@ class _MainNavigationAppState extends State<MainNavigationApp> {
                 setState(() => _currentIndex = index);
               },
               items: [
-                _buildNavItem(Icons.storefront_outlined, Icons.storefront, 'Home', 0),
-                _buildNavItem(Icons.shopping_bag_outlined, Icons.shopping_bag, 'Pesanan', 1),
-                _buildNavItemWithBadge(cartItemCount, Icons.shopping_cart_outlined, Icons.shopping_cart, 'Keranjang', 2),
+                _buildNavItem(
+                  Icons.storefront_outlined,
+                  Icons.storefront,
+                  'Home',
+                  0,
+                ),
+                _buildNavItem(
+                  Icons.shopping_bag_outlined,
+                  Icons.shopping_bag,
+                  'Pesanan',
+                  1,
+                ),
+                _buildNavItemWithBadge(
+                  cartItemCount,
+                  Icons.shopping_cart_outlined,
+                  Icons.shopping_cart,
+                  'Keranjang',
+                  2,
+                ),
               ],
             );
           },
@@ -154,17 +166,33 @@ class _MainNavigationAppState extends State<MainNavigationApp> {
     );
   }
 
-  BottomNavigationBarItem _buildNavItem(IconData outlineIcon, IconData filledIcon, String label, int index) {
+  BottomNavigationBarItem _buildNavItem(
+    IconData outlineIcon,
+    IconData filledIcon,
+    String label,
+    int index,
+  ) {
     return BottomNavigationBarItem(
       icon: Icon(_currentIndex == index ? filledIcon : outlineIcon),
       label: label,
     );
   }
 
-  BottomNavigationBarItem _buildNavItemWithBadge(int count, IconData outlineIcon, IconData filledIcon, String label, int index) {
+  BottomNavigationBarItem _buildNavItemWithBadge(
+    int count,
+    IconData outlineIcon,
+    IconData filledIcon,
+    String label,
+    int index,
+  ) {
     return BottomNavigationBarItem(
       icon: Badge(
-        label: count > 0 ? Text('$count', style: TextStyle(color: AppColors.neutralWhite, fontSize: 10)) : null,
+        label: count > 0
+            ? Text(
+                '$count',
+                style: TextStyle(color: AppColors.neutralWhite, fontSize: 10),
+              )
+            : null,
         backgroundColor: AppColors.errorRed,
         isLabelVisible: count > 0,
         child: Icon(_currentIndex == index ? filledIcon : outlineIcon),
@@ -188,16 +216,47 @@ class _MainNavigationAppState extends State<MainNavigationApp> {
       ),
       actions: [
         PopupMenuButton<String>(
-          onSelected: (value) {
+          onSelected: (value) async {
             if (value == 'profile') {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ProfileScreen()),
               );
             } else if (value == 'logout') {
-              // Perbaikan: Tambahkan mounted check sebelum read (walaupun di sini aman, ini praktik terbaik)
-              if (!mounted) return; 
-              context.read<AuthController>().logout();
+              // Show logout confirmation dialog
+              final shouldLogout = await showDialog<bool>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Konfirmasi Logout'),
+                    content: const Text(
+                      'Apakah Anda yakin ingin keluar dari akun ini?',
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Batal'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text(
+                          'Logout',
+                          style: TextStyle(color: AppColors.errorRed),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+
+              if (shouldLogout == true && mounted) {
+                await context.read<AuthController>().logout();
+                if (mounted) {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/login', (route) => false);
+                }
+              }
             }
           },
           itemBuilder: (context) => [
@@ -209,7 +268,11 @@ class _MainNavigationAppState extends State<MainNavigationApp> {
             child: CircleAvatar(
               radius: 15,
               backgroundColor: AppColors.neutralGray,
-              child: Icon(Icons.person, color: AppColors.neutralDarkGray, size: 20),
+              child: Icon(
+                Icons.person,
+                color: AppColors.neutralDarkGray,
+                size: 20,
+              ),
             ),
           ),
         ),

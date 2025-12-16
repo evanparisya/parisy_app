@@ -30,12 +30,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     // Load all necessary data for Admin dashboard
     Future.microtask(() {
       context.read<UserManagementController>().loadAllWarga();
-      context.read<MarketplaceController>().loadInitialData(); 
+      context.read<MarketplaceController>().loadInitialData();
       context.read<FinanceController>().loadFinanceData();
       context.read<ReportingController>().loadTransactionHistory();
     });
   }
-  
+
   // List of screens for BottomNavBar (5 items)
   late final List<Widget> _widgetOptions = <Widget>[
     const _AdminDashboardContent(), // Tab 0: Dashboard (Ringkasan)
@@ -50,16 +50,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       _selectedIndex = index;
     });
   }
-  
+
   // Helper function to get the current title
   String get _currentTitle {
     switch (_selectedIndex) {
-      case 0: return 'Admin Dashboard';
-      case 1: return 'CRUD Data Warga';
-      case 2: return 'CRUD Barang Jual Beli';
-      case 3: return 'Kelola Uang & History Keuangan';
-      case 4: return 'History Transaksi & Barang';
-      default: return 'Admin Dashboard';
+      case 0:
+        return 'Admin Dashboard';
+      case 1:
+        return 'CRUD Data Warga';
+      case 2:
+        return 'CRUD Barang Jual Beli';
+      case 3:
+        return 'Kelola Uang & History Keuangan';
+      case 4:
+        return 'History Transaksi & Barang';
+      default:
+        return 'Admin Dashboard';
     }
   }
 
@@ -77,11 +83,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: const Text('Batal'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop(); // Close dialog
-                context.read<AuthController>().logout(); // Perform logout
+                await context.read<AuthController>().logout(); // Perform logout
+                if (mounted) {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/login', (route) => false);
+                }
               },
-              child: const Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+              child: const Text(
+                'Logout',
+                style: TextStyle(color: AppColors.errorRed),
+              ),
             ),
           ],
         );
@@ -107,17 +121,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         }
       },
       // Menggunakan CircleAvatar sebagai 'gambar profile' di App Bar
-      icon: CircleAvatar( 
+      icon: CircleAvatar(
         backgroundColor: AppColors.errorRed.withOpacity(0.2),
-        child: Icon(Icons.shield, size: 24, color: AppColors.errorRed), // Ikon Admin
+        child: Icon(
+          Icons.shield,
+          size: 24,
+          color: AppColors.errorRed,
+        ), // Ikon Admin
       ),
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         const PopupMenuItem<String>(
           value: 'profile',
-          child: ListTile(
-            leading: Icon(Icons.person),
-            title: Text('Profil'),
-          ),
+          child: ListTile(leading: Icon(Icons.person), title: Text('Profil')),
         ),
         const PopupMenuItem<String>(
           value: 'logout',
@@ -140,7 +155,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         elevation: 0,
         title: Text(
           _currentTitle,
-          style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.primaryBlack,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           Padding(
@@ -153,14 +171,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_add),
-            label: 'Warga',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Dashboard'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_add), label: 'Warga'),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_bag),
             label: 'Barang',
@@ -233,43 +245,61 @@ class _AdminDashboardContent extends StatelessWidget {
     final marketplaceController = context.watch<MarketplaceController>();
     final financeController = context.watch<FinanceController>();
     final currentUser = context.read<AuthController>().currentUser;
-    final totalWarga = userController.wargaList.length; 
+    final totalWarga = userController.wargaList.length;
     final netBalance = financeController.summary?.netBalance ?? 0.0;
-    
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // --- Header & Welcome ---
-          _buildProfileHeader(currentUser?.name ?? 'Admin', currentUser?.subRole ?? AppStrings.subRoleAdmin),
+          _buildProfileHeader(
+            currentUser?.name ?? 'Admin',
+            currentUser?.subRole ?? AppStrings.subRoleAdmin,
+          ),
           SizedBox(height: 24),
-          
+
           // --- Statistics Summary ---
-          Text('Ringkasan Total Aset', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
+          Text(
+            'Ringkasan Total Aset',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryBlack,
+            ),
+          ),
           SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _StatisticCard(
-                title: 'Total Warga', 
-                value: totalWarga.toString(), 
-                icon: Icons.people_alt,
-                color: 0xFF3B82F6,
-              )),
+              Expanded(
+                child: _StatisticCard(
+                  title: 'Total Warga',
+                  value: totalWarga.toString(),
+                  icon: Icons.people_alt,
+                  color: 0xFF3B82F6,
+                ),
+              ),
               SizedBox(width: 12),
-              Expanded(child: _StatisticCard(
-                title: 'Total Barang', 
-                value: marketplaceController.products.length.toString(), 
-                icon: Icons.storefront,
-                color: 0xFFEC4899,
-              )),
+              Expanded(
+                child: _StatisticCard(
+                  title: 'Total Barang',
+                  value: marketplaceController.products.length.toString(),
+                  icon: Icons.storefront,
+                  color: 0xFFEC4899,
+                ),
+              ),
               SizedBox(width: 12),
-              Expanded(child: _StatisticCard(
-                title: 'Saldo Bersih', 
-                value: netBalance > 0 ? '+Rp${netBalance.toStringAsFixed(0)}' : 'Rp0', 
-                icon: Icons.account_balance,
-                color: 0xFF10B981,
-              )),
+              Expanded(
+                child: _StatisticCard(
+                  title: 'Saldo Bersih',
+                  value: netBalance > 0
+                      ? '+Rp${netBalance.toStringAsFixed(0)}'
+                      : 'Rp0',
+                  icon: Icons.account_balance,
+                  color: 0xFF10B981,
+                ),
+              ),
             ],
           ),
           SizedBox(height: 32),
@@ -285,7 +315,12 @@ class _StatisticCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final int color;
-  const _StatisticCard({required this.title, required this.value, required this.icon, required this.color});
+  const _StatisticCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -311,10 +346,7 @@ class _StatisticCard extends StatelessWidget {
           ),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.neutralDarkGray,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray),
           ),
         ],
       ),

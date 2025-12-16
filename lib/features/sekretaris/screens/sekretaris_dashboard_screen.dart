@@ -12,7 +12,8 @@ class SekretarisDashboardScreen extends StatefulWidget {
   const SekretarisDashboardScreen({super.key});
 
   @override
-  State<SekretarisDashboardScreen> createState() => _SekretarisDashboardScreenState();
+  State<SekretarisDashboardScreen> createState() =>
+      _SekretarisDashboardScreenState();
 }
 
 class _SekretarisDashboardScreenState extends State<SekretarisDashboardScreen> {
@@ -32,7 +33,7 @@ class _SekretarisDashboardScreenState extends State<SekretarisDashboardScreen> {
   late final List<Widget> _widgetOptions = <Widget>[
     const _SekretarisDashboardContent(), // Tab 0: Dashboard Content
     const SekretarisTransactionHistoryScreen(), // Tab 1: History Transaksi
-    const SekretarisProductHistoryScreen(),     // Tab 2: History Barang
+    const SekretarisProductHistoryScreen(), // Tab 2: History Barang
   ];
 
   void _onItemTapped(int index) {
@@ -40,14 +41,18 @@ class _SekretarisDashboardScreenState extends State<SekretarisDashboardScreen> {
       _selectedIndex = index;
     });
   }
-  
+
   // Helper function to get the current title
   String get _currentTitle {
     switch (_selectedIndex) {
-      case 0: return 'Sekretaris Dashboard';
-      case 1: return 'History Transaksi';
-      case 2: return 'History Barang Jual Beli';
-      default: return 'Sekretaris Dashboard';
+      case 0:
+        return 'Sekretaris Dashboard';
+      case 1:
+        return 'History Transaksi';
+      case 2:
+        return 'History Barang Jual Beli';
+      default:
+        return 'Sekretaris Dashboard';
     }
   }
 
@@ -65,11 +70,19 @@ class _SekretarisDashboardScreenState extends State<SekretarisDashboardScreen> {
               child: const Text('Batal'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.of(context).pop(); // Close dialog
-                context.read<AuthController>().logout(); // Perform logout
+                await context.read<AuthController>().logout(); // Perform logout
+                if (mounted) {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/login', (route) => false);
+                }
               },
-              child: const Text('Logout', style: TextStyle(color: AppColors.errorRed)),
+              child: const Text(
+                'Logout',
+                style: TextStyle(color: AppColors.errorRed),
+              ),
             ),
           ],
         );
@@ -82,23 +95,27 @@ class _SekretarisDashboardScreenState extends State<SekretarisDashboardScreen> {
     return PopupMenuButton<String>(
       onSelected: (String result) {
         if (result == 'profile') {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileScreen()));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
         } else if (result == 'logout') {
           _confirmLogout();
         }
       },
-      icon: CircleAvatar( 
+      icon: CircleAvatar(
         radius: 18,
         backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
-        child: Icon(Icons.assignment, size: 24, color: AppColors.primaryGreen), // Ikon Sekretaris
+        child: Icon(
+          Icons.assignment,
+          size: 24,
+          color: AppColors.primaryGreen,
+        ), // Ikon Sekretaris
       ),
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
         const PopupMenuItem<String>(
           value: 'profile',
-          child: ListTile(
-            leading: Icon(Icons.person),
-            title: Text('Profil'),
-          ),
+          child: ListTile(leading: Icon(Icons.person), title: Text('Profil')),
         ),
         const PopupMenuItem<String>(
           value: 'logout',
@@ -136,18 +153,12 @@ class _SekretarisDashboardScreenState extends State<SekretarisDashboardScreen> {
       body: _widgetOptions.elementAt(_selectedIndex), // Display selected screen
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Dashboard',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Dashboard'),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),
             label: 'Transaksi',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.inventory),
-            label: 'Barang',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.inventory), label: 'Barang'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: const Color(0xFF3B82F6),
@@ -175,7 +186,11 @@ class _SekretarisDashboardContent extends StatelessWidget {
           CircleAvatar(
             radius: 30,
             backgroundColor: AppColors.primaryGreen.withOpacity(0.2),
-            child: Icon(Icons.assignment, size: 30, color: AppColors.primaryGreen),
+            child: Icon(
+              Icons.assignment,
+              size: 30,
+              color: AppColors.primaryGreen,
+            ),
           ),
           SizedBox(width: 16),
           Column(
@@ -209,38 +224,54 @@ class _SekretarisDashboardContent extends StatelessWidget {
     final currentUser = context.read<AuthController>().currentUser;
 
     return SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- Header & Welcome ---
-            _buildProfileHeader(context, currentUser?.name ?? 'Sekretaris', currentUser?.subRole ?? AppStrings.subRoleSekretaris),
-            SizedBox(height: 24),
-            
-            // --- Statistics Summary ---
-            Text('Ringkasan Laporan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _StatisticCard(
-                  title: 'Total Transaksi', 
-                  value: reportingController.transactionHistory.length.toString(), 
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // --- Header & Welcome ---
+          _buildProfileHeader(
+            context,
+            currentUser?.name ?? 'Sekretaris',
+            currentUser?.subRole ?? AppStrings.subRoleSekretaris,
+          ),
+          SizedBox(height: 24),
+
+          // --- Statistics Summary ---
+          Text(
+            'Ringkasan Laporan',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryBlack,
+            ),
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _StatisticCard(
+                  title: 'Total Transaksi',
+                  value: reportingController.transactionHistory.length
+                      .toString(),
                   icon: Icons.receipt_long,
                   color: 0xFF3B82F6,
-                )),
-                SizedBox(width: 12),
-                Expanded(child: _StatisticCard(
-                  title: 'Total Barang Terdaftar', 
-                  value: reportingController.productHistory.length.toString(), 
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _StatisticCard(
+                  title: 'Total Barang Terdaftar',
+                  value: reportingController.productHistory.length.toString(),
                   icon: Icons.inventory,
                   color: 0xFFEC4899,
-                )),
-              ],
-            ),
-            SizedBox(height: 32),
-          ],
-        ),
-      );
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 32),
+        ],
+      ),
+    );
   }
 }
 
@@ -250,7 +281,12 @@ class _StatisticCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final int color;
-  const _StatisticCard({required this.title, required this.value, required this.icon, required this.color});
+  const _StatisticCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -276,10 +312,7 @@ class _StatisticCard extends StatelessWidget {
           ),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.neutralDarkGray,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray),
           ),
         ],
       ),
