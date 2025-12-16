@@ -47,8 +47,8 @@ class AuthService {
     String address,
     String phone,
     String password,
-  String role,
-  String subRole
+    String role,
+    String subRole,
   ) async {
     return await apiClient.post('auth/register', {
       'name': name,
