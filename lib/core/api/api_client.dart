@@ -28,28 +28,44 @@ class ApiClient {
   }
 
   // Helper method to parse response
-  Map<String, dynamic> _parseResponse(http.Response response) {
-    Map<String, dynamic> data;
+  dynamic _parseResponse(http.Response response) {
+    dynamic data;
 
     try {
-      data = json.decode(response.body) as Map<String, dynamic>;
+      data = json.decode(response.body);
+
+      // If it's already a List, wrap it in a Map with 'message' key for consistency
+      if (data is List) {
+        return data; // Return List directly
+      }
+
+      // If it's a Map, add success flag
+      if (data is Map<String, dynamic>) {
+        data['success'] =
+            response.statusCode == 200 || response.statusCode == 201;
+
+        // If status code indicates error but no message, add one
+        if (!data['success'] && data['message'] == null) {
+          data['message'] =
+              'Request gagal dengan status ${response.statusCode}';
+        }
+
+        return data;
+      }
+
+      // For other types, wrap in a Map
+      return {
+        'success': response.statusCode == 200 || response.statusCode == 201,
+        'message': data.toString(),
+      };
     } catch (e) {
-      data = {
+      return {
+        'success': false,
         'message': response.body.isNotEmpty
             ? response.body
             : 'Server mengembalikan response kosong',
       };
     }
-
-    // Set success based on status code
-    data['success'] = response.statusCode == 200 || response.statusCode == 201;
-
-    // If status code indicates error but no message, add one
-    if (!data['success'] && data['message'] == null) {
-      data['message'] = 'Request gagal dengan status ${response.statusCode}';
-    }
-
-    return data;
   }
 
   // Helper method to handle errors
@@ -77,10 +93,7 @@ class ApiClient {
   }
 
   // POST request without token
-  Future<Map<String, dynamic>> post(
-    String endpoint,
-    Map<String, dynamic> body,
-  ) async {
+  Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     try {
       final path = endpoint.startsWith('/') ? endpoint : '/$endpoint';
       final url = Uri.parse('$baseUrl$path');
@@ -104,7 +117,7 @@ class ApiClient {
   }
 
   // POST request with token
-  Future<Map<String, dynamic>> postWithToken(
+  Future<dynamic> postWithToken(
     String endpoint,
     Map<String, dynamic> body,
     String token,
@@ -132,10 +145,7 @@ class ApiClient {
   }
 
   // GET request with token
-  Future<Map<String, dynamic>> getWithToken(
-    String endpoint,
-    String token,
-  ) async {
+  Future<dynamic> getWithToken(String endpoint, String token) async {
     try {
       final path = endpoint.startsWith('/') ? endpoint : '/$endpoint';
       final url = Uri.parse('$baseUrl$path');
@@ -157,7 +167,7 @@ class ApiClient {
   }
 
   // PUT request with token
-  Future<Map<String, dynamic>> putWithToken(
+  Future<dynamic> putWithToken(
     String endpoint,
     Map<String, dynamic> body,
     String token,
@@ -185,10 +195,7 @@ class ApiClient {
   }
 
   // DELETE request with token
-  Future<Map<String, dynamic>> deleteWithToken(
-    String endpoint,
-    String token,
-  ) async {
+  Future<dynamic> deleteWithToken(String endpoint, String token) async {
     try {
       final path = endpoint.startsWith('/') ? endpoint : '/$endpoint';
       final url = Uri.parse('$baseUrl$path');
