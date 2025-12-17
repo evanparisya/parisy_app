@@ -32,18 +32,18 @@ class _AdminProductHistoryScreenState extends State<AdminProductHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.primaryBlack),
-        title: Text(
-          'History Barang Terdaftar',
-          style: TextStyle(
-            color: AppColors.primaryBlack,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: AppColors.background,
+      //   elevation: 0,
+      //   iconTheme: IconThemeData(color: AppColors.primaryBlack),
+      //   title: Text(
+      //     'History Barang Terdaftar',
+      //     style: TextStyle(
+      //       color: AppColors.primaryBlack,
+      //       fontWeight: FontWeight.bold,
+      //     ),
+      //   ),
+      // ),
       body: Column(
         children: [
           // Category Filter

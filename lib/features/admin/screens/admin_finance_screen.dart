@@ -28,18 +28,18 @@ class _AdminFinanceScreenState extends State<AdminFinanceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.primaryBlack),
-        title: Text('Kelola Uang & History Keuangan', style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add, color: AppColors.primaryBlack),
-            onPressed: () => _showCashFlowFormDialog(context, null),
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: AppColors.background,
+      //   elevation: 0,
+      //   iconTheme: IconThemeData(color: AppColors.primaryBlack),
+      //   title: Text('Kelola Uang & History Keuangan', style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold)),
+      //   actions: [
+      //     IconButton(
+      //       icon: Icon(Icons.add, color: AppColors.primaryBlack),
+      //       onPressed: () => _showCashFlowFormDialog(context, null),
+      //     ),
+      //   ],
+      // ),
       body: Consumer<FinanceController>(
         builder: (context, controller, child) {
           if (controller.state == FinanceState.loading && controller.summary == null) {

@@ -37,18 +37,18 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.primaryBlack),
-        title: Text(
-          'CRUD Barang Jual Beli',
-          style: TextStyle(
-            color: AppColors.primaryBlack,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: AppColors.background,
+      //   elevation: 0,
+      //   iconTheme: IconThemeData(color: AppColors.primaryBlack),
+      //   title: Text(
+      //     'CRUD Barang Jual Beli',
+      //     style: TextStyle(
+      //       color: AppColors.primaryBlack,
+      //       fontWeight: FontWeight.bold,
+      //     ),
+      //   ),
+      // ),
       body: Column(
         children: [
           // Search bar

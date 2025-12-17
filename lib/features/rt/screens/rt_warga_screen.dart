@@ -81,10 +81,55 @@ class _RtWargaScreenState extends State<RtWargaScreen> {
           Expanded(
             child: Consumer<UserManagementController>(
               builder: (context, controller, _) {
-                if (controller.isLoading && controller.wargaList.isEmpty) {
+                // Show loading indicator
+                if (controller.state == UserManagementState.loading &&
+                    controller.wargaList.isEmpty) {
                   return Center(child: CircularProgressIndicator());
                 }
 
+                // Show error message
+                if (controller.state == UserManagementState.error) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: AppColors.errorRed,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Gagal memuat data',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            controller.errorMessage ?? 'Terjadi kesalahan',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppColors.neutralDarkGray),
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () =>
+                              controller.loadWargaByRT(AppStrings.subRoleRT),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryBlack,
+                          ),
+                          child: Text('Coba Lagi'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // Show empty state
                 if (controller.wargaList.isEmpty) {
                   return EmptyStateWidget(
                     message: 'Tidak ada data warga di lingkungan RT ini.',
@@ -96,6 +141,12 @@ class _RtWargaScreenState extends State<RtWargaScreen> {
                   return w.name.toLowerCase().contains(query) ||
                       w.email.toLowerCase().contains(query);
                 }).toList();
+
+                if (filteredList.isEmpty) {
+                  return EmptyStateWidget(
+                    message: 'Tidak ada hasil pencarian.',
+                  );
+                }
 
                 return ListView.builder(
                   padding: EdgeInsets.symmetric(horizontal: 16),

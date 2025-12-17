@@ -57,9 +57,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       case 0:
         return 'Admin Dashboard';
       case 1:
-        return 'CRUD Data Warga';
+        return 'Kelola Data Warga';
       case 2:
-        return 'CRUD Barang Jual Beli';
+        return 'Kelola Barang Jual Beli';
       case 3:
         return 'Kelola Uang & History Keuangan';
       case 4:

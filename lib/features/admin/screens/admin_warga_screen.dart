@@ -35,18 +35,18 @@ class _AdminWargaScreenState extends State<AdminWargaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.primaryBlack),
-        title: Text(
-          'CRUD Data Warga',
-          style: TextStyle(
-            color: AppColors.primaryBlack,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: AppColors.background,
+      //   elevation: 0,
+      //   iconTheme: IconThemeData(color: AppColors.primaryBlack),
+      //   // title: Text(
+      //   //   'CRUD Data Warga',
+      //   //   style: TextStyle(
+      //   //     color: AppColors.primaryBlack,
+      //   //     fontWeight: FontWeight.bold,
+      //   //   ),
+      //   // ),
+      // ),
       body: Column(
         children: [
           // Search bar
@@ -75,7 +75,8 @@ class _AdminWargaScreenState extends State<AdminWargaScreen> {
           Expanded(
             child: Consumer<UserManagementController>(
               builder: (context, controller, _) {
-                if (controller.isLoading && controller.wargaList.isEmpty) {
+                if (controller.state == UserManagementState.loading &&
+                    controller.wargaList.isEmpty) {
                   return Center(child: CircularProgressIndicator());
                 }
 
@@ -328,7 +329,6 @@ class _WargaFormDialogState extends State<_WargaFormDialog> {
                 label: 'Email',
                 hint: 'Email',
                 controller: _emailController,
-                readOnly: !isNew,
               ),
               SizedBox(height: 12),
               InputField(
@@ -369,7 +369,7 @@ class _WargaFormDialogState extends State<_WargaFormDialog> {
           child: Text('Batal'),
         ),
         TextButton(
-          onPressed: () {
+          onPressed: () async {
             if (_formKey.currentState!.validate()) {
               final newWarga = WargaModel(
                 id: widget.warga?.id ?? 0,
@@ -382,12 +382,38 @@ class _WargaFormDialogState extends State<_WargaFormDialog> {
               );
 
               final controller = context.read<UserManagementController>();
+              bool success = false;
+
               if (isNew) {
-                controller.addWarga(newWarga);
+                success = await controller.addWarga(newWarga);
               } else {
-                controller.updateWarga(newWarga);
+                success = await controller.updateWarga(newWarga);
               }
-              Navigator.pop(context);
+
+              if (success) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isNew
+                          ? 'Warga berhasil ditambahkan'
+                          : 'Warga berhasil diupdate',
+                    ),
+                    backgroundColor: AppColors.primaryGreen,
+                  ),
+                );
+                // Reload data after successful operation
+                await controller.loadAllWarga();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      controller.errorMessage ?? 'Terjadi kesalahan',
+                    ),
+                    backgroundColor: AppColors.errorRed,
+                  ),
+                );
+              }
             }
           },
           child: Text('Simpan'),

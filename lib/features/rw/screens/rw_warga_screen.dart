@@ -41,7 +41,7 @@ class _RwWargaScreenState extends State<RwWargaScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.primaryBlack),
         title: Text(
-          'Data Warga & RT (Read Only)',
+          'Data Seluruh Warga (Read Only)',
           style: TextStyle(
             color: AppColors.primaryBlack,
             fontWeight: FontWeight.bold,
@@ -56,7 +56,7 @@ class _RwWargaScreenState extends State<RwWargaScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                labelText: 'Cari Warga atau RT',
+                labelText: 'Cari Warga',
                 hintText: 'Cari nama atau email',
                 prefixIcon: Icon(
                   Icons.search,
@@ -77,27 +77,71 @@ class _RwWargaScreenState extends State<RwWargaScreen> {
           Expanded(
             child: Consumer<UserManagementController>(
               builder: (context, controller, _) {
-                if (controller.isLoading && controller.wargaList.isEmpty) {
+                // Show loading indicator
+                if (controller.state == UserManagementState.loading &&
+                    controller.wargaList.isEmpty) {
                   return Center(child: CircularProgressIndicator());
                 }
 
-                if (controller.wargaList.isEmpty) {
-                  return EmptyStateWidget(
-                    message: 'Tidak ada data warga atau RT.',
+                // Show error message
+                if (controller.state == UserManagementState.error) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: AppColors.errorRed,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Gagal memuat data',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            controller.errorMessage ?? 'Terjadi kesalahan',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: AppColors.neutralDarkGray),
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => controller.loadAllWarga(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryBlack,
+                          ),
+                          child: Text('Coba Lagi'),
+                        ),
+                      ],
+                    ),
                   );
                 }
 
-                // Filter: hanya tampilkan sub_role 'warga' dan 'rt'
+                // Show empty state
+                if (controller.wargaList.isEmpty) {
+                  return EmptyStateWidget(
+                    message: 'Tidak ada data warga di lingkungan RW ini.',
+                  );
+                }
+
                 final filteredList = controller.wargaList.where((w) {
-                  final isWargaOrRt = w.subRole == 'warga' || w.subRole == 'rt';
-                  if (!isWargaOrRt) return false;
-
                   final query = _searchController.text.toLowerCase();
-                  if (query.isEmpty) return true;
-
                   return w.name.toLowerCase().contains(query) ||
                       w.email.toLowerCase().contains(query);
                 }).toList();
+
+                if (filteredList.isEmpty) {
+                  return EmptyStateWidget(
+                    message: 'Tidak ada hasil pencarian.',
+                  );
+                }
 
                 return ListView.builder(
                   padding: EdgeInsets.symmetric(horizontal: 16),

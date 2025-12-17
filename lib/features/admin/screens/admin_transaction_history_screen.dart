@@ -18,9 +18,9 @@ class _AdminTransactionHistoryScreenState extends State<AdminTransactionHistoryS
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      context.read<ReportingController>().loadTransactionHistory();
-    });
+    // Future.microtask(() {
+    //   context.read<ReportingController>().loadTransactionHistory();
+    // });
   }
 
   @override
