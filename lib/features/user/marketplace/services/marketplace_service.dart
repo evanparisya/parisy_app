@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:parisy_app/core/api/api_client.dart';
 import 'package:parisy_app/core/constants/dummy_data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 
 class MarketplaceService {
@@ -14,6 +15,18 @@ class MarketplaceService {
   MarketplaceService({required this.apiClient});
 
   // --- Helper Methods ---
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
+  Future<void> _setAuthToken() async {
+    final token = await _getToken();
+    if (token != null && token.isNotEmpty) {
+      apiClient.dio.options.headers['Authorization'] = 'Bearer $token';
+    }
+  }
+
   Future<T> _handleApiCall<T>({
     required Future<T> Function() apiCall,
     required Future<T> Function() mockCall,
@@ -28,7 +41,7 @@ class MarketplaceService {
     try {
       final response = await apiClient.dio.get(endpoint);
       if (response.statusCode == 200) {
-        // Backend returns array directly for /vegetable/list
+        // Backend returns array directly for list endpoints
         if (response.data is List) {
           final products = (response.data as List)
               .map((item) => ProductModel.fromJson(item))
@@ -51,10 +64,8 @@ class MarketplaceService {
     try {
       final response = await apiClient.dio.get(endpoint);
       if (response.statusCode == 200) {
-        // Backend returns vegetable data directly
-        return ProductModel.fromJson(
-          response.data['vegetable'] ?? response.data,
-        );
+        // Backend /get/<id> returns vegetable data directly
+        return ProductModel.fromJson(response.data);
       } else {
         throw Exception('Failed to fetch product');
       }
@@ -68,6 +79,7 @@ class MarketplaceService {
     Map<String, dynamic> data,
   ) async {
     try {
+      await _setAuthToken();
       final response = await apiClient.dio.put(endpoint, data: data);
       if (response.statusCode == 200) {
         return ProductModel.fromJson(
@@ -246,6 +258,7 @@ class MarketplaceService {
       },
       apiCall: () async {
         try {
+          await _setAuthToken();
           final response = await apiClient.dio.post(
             '/vegetable/add',
             data: {
@@ -298,6 +311,7 @@ class MarketplaceService {
       },
       apiCall: () async {
         try {
+          await _setAuthToken();
           final response = await apiClient.dio.put(
             '/vegetable/update/${product.id}',
             data: {
@@ -338,6 +352,7 @@ class MarketplaceService {
       },
       apiCall: () async {
         try {
+          await _setAuthToken();
           final response = await apiClient.dio.delete('/vegetable/delete/$id');
           if (response.statusCode == 200 || response.statusCode == 204) {
             return;
