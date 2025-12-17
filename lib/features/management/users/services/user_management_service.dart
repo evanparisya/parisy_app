@@ -40,18 +40,26 @@ class UserManagementService {
       final token = await _getToken();
       final response = await apiClient.getWithToken('auth/all', token);
 
-      // Backend returns array directly
+      // Handle different response formats
+      List<dynamic> usersList;
+      
       if (response is List) {
-        return (response as List)
-            .map((item) => item as Map<String, dynamic>)
-            .map(_parseUserData)
-            .toList();
+        // Backend returns array directly
+        usersList = response;
+      } else if (response is Map<String, dynamic>) {
+        // Check if response has 'data' field
+        if (response['data'] != null && response['data'] is List) {
+          usersList = response['data'] as List;
+        } else {
+          // If no 'data' field or it's not a list, throw error
+          throw Exception('Invalid response format: expected List or Map with data field');
+        }
+      } else {
+        throw Exception('Unexpected response type: ${response.runtimeType}');
       }
 
-      // Fallback for wrapped response
-      final usersData = (response['data'] ?? response) as List?;
-      return (usersData ?? [])
-          .cast<Map<String, dynamic>>()
+      return usersList
+          .map((item) => item as Map<String, dynamic>)
           .map(_parseUserData)
           .toList();
     } catch (e) {
