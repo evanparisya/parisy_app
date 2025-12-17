@@ -3,6 +3,8 @@ import 'package:parisy_app/features/management/users/models/warga_model.dart';
 import 'package:parisy_app/features/management/users/models/rt_model.dart';
 import 'package:parisy_app/features/management/users/services/user_management_service.dart';
 
+enum UserManagementState { initial, loading, loaded, error }
+
 class UserManagementController extends ChangeNotifier {
   final UserManagementService _service;
 
@@ -13,15 +15,15 @@ class UserManagementController extends ChangeNotifier {
   List<RtModel> _rtUsers = [];
   Map<String, dynamic> _stats = {};
 
-  bool _isLoading = false;
+  UserManagementState _state = UserManagementState.initial;
   String? _error;
-
 
   List<WargaModel> get users => _users;
   List<RtModel> get rtUsers => _rtUsers;
   Map<String, dynamic> get stats => _stats;
 
-  bool get isLoading => _isLoading;
+  UserManagementState get state => _state;
+  bool get isLoading => _state == UserManagementState.loading;
   String? get error => _error;
   String? get errorMessage => _error;
   bool get hasError => _error != null;
@@ -34,13 +36,16 @@ class UserManagementController extends ChangeNotifier {
     return _users.where((user) => user.subRole == subRole).toList();
   }
 
-  void _setLoading(bool loading) {
-    _isLoading = loading;
+  void _setState(UserManagementState state) {
+    _state = state;
     notifyListeners();
   }
 
   void _setError(String? error) {
     _error = error;
+    if (error != null) {
+      _state = UserManagementState.error;
+    }
     notifyListeners();
   }
 
@@ -60,73 +65,70 @@ class UserManagementController extends ChangeNotifier {
   }
 
   Future<void> loadAllUsers() async {
-    _setLoading(true);
+    _setState(UserManagementState.loading);
     _setError(null);
 
     try {
       final users = await _service.getAllUsers();
       _setUsers(users);
+      _setState(UserManagementState.loaded);
     } catch (e) {
       _setError(e.toString());
       debugPrint('Error loading users: $e');
-    } finally {
-      _setLoading(false);
     }
   }
 
   Future<void> loadUsersBySubRole(String subRole) async {
-    _setLoading(true);
+    _setState(UserManagementState.loading);
     _setError(null);
 
     try {
       final users = await _service.getUsersBySubRole(subRole);
       _setUsers(users);
+      _setState(UserManagementState.loaded);
     } catch (e) {
       _setError(e.toString());
       debugPrint('Error loading users by sub_role: $e');
-    } finally {
-      _setLoading(false);
     }
   }
 
   Future<void> loadRTUsers() async {
-    _setLoading(true);
+    _setState(UserManagementState.loading);
     _setError(null);
 
     try {
       final rtUsers = await _service.getAllRT();
       _setRtUsers(rtUsers);
+      _setState(UserManagementState.loaded);
     } catch (e) {
       _setError(e.toString());
       debugPrint('Error loading RT users: $e');
-    } finally {
-      _setLoading(false);
     }
   }
 
   Future<void> loadStats() async {
-    _setLoading(true);
+    _setState(UserManagementState.loading);
     _setError(null);
 
     try {
       final stats = await _service.getUserStats();
       _setStats(stats);
+      _setState(UserManagementState.loaded);
     } catch (e) {
       _setError(e.toString());
       debugPrint('Error loading stats: $e');
-    } finally {
-      _setLoading(false);
     }
   }
 
   Future<bool> addUser(WargaModel user) async {
-    _setLoading(true);
+    _setState(UserManagementState.loading);
     _setError(null);
 
     try {
       final newUser = await _service.addUser(user);
 
       _users = [..._users, newUser];
+      _setState(UserManagementState.loaded);
       notifyListeners();
 
       return true;
@@ -134,13 +136,11 @@ class UserManagementController extends ChangeNotifier {
       _setError(e.toString());
       debugPrint('Error adding user: $e');
       return false;
-    } finally {
-      _setLoading(false);
     }
   }
 
   Future<bool> updateUser(WargaModel user) async {
-    _setLoading(true);
+    _setState(UserManagementState.loading);
     _setError(null);
 
     try {
@@ -149,6 +149,7 @@ class UserManagementController extends ChangeNotifier {
       final index = _users.indexWhere((u) => u.id == updatedUser.id);
       if (index != -1) {
         _users[index] = updatedUser;
+        _setState(UserManagementState.loaded);
         notifyListeners();
       }
 
@@ -157,19 +158,18 @@ class UserManagementController extends ChangeNotifier {
       _setError(e.toString());
       debugPrint('Error updating user: $e');
       return false;
-    } finally {
-      _setLoading(false);
     }
   }
 
   Future<bool> deleteUser(int userId) async {
-    _setLoading(true);
+    _setState(UserManagementState.loading);
     _setError(null);
 
     try {
       await _service.deleteUser(userId);
 
       _users = _users.where((u) => u.id != userId).toList();
+      _setState(UserManagementState.loaded);
       notifyListeners();
 
       return true;
@@ -177,8 +177,6 @@ class UserManagementController extends ChangeNotifier {
       _setError(e.toString());
       debugPrint('Error deleting user: $e');
       return false;
-    } finally {
-      _setLoading(false);
     }
   }
 
