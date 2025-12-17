@@ -48,12 +48,19 @@ class UserManagementService {
             .toList();
       }
 
-      // Fallback for wrapped response
-      final usersData = (response['data'] ?? response) as List?;
-      return (usersData ?? [])
-          .cast<Map<String, dynamic>>()
-          .map(_parseUserData)
-          .toList();
+      // Fallback for wrapped response (when response is a Map)
+      if (response is Map<String, dynamic>) {
+        final usersData = response['data'];
+        if (usersData is List) {
+          return (usersData as List)
+              .map((item) => item as Map<String, dynamic>)
+              .map(_parseUserData)
+              .toList();
+        }
+      }
+
+      // If we reach here, the response format is unexpected
+      throw Exception('Format respons tidak valid: ${response.runtimeType}');
     } catch (e) {
       throw Exception('Error mengambil data pengguna: $e');
     }
