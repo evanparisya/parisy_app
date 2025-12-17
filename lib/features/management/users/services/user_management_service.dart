@@ -40,12 +40,20 @@ class UserManagementService {
       final token = await _getToken();
       final response = await apiClient.getWithToken('auth/all', token);
 
-      if (!response['success']) {
-        throw Exception(response['message'] ?? 'Gagal mengambil data pengguna');
+      // Backend returns array directly
+      if (response is List) {
+        return (response as List)
+            .map((item) => item as Map<String, dynamic>)
+            .map(_parseUserData)
+            .toList();
       }
 
-      final List<dynamic> usersData = response['data'] ?? [];
-      return usersData.map((json) => _parseUserData(json)).toList();
+      // Fallback for wrapped response
+      final usersData = (response['data'] ?? response) as List?;
+      return (usersData ?? [])
+          .cast<Map<String, dynamic>>()
+          .map(_parseUserData)
+          .toList();
     } catch (e) {
       throw Exception('Error mengambil data pengguna: $e');
     }
@@ -69,22 +77,21 @@ class UserManagementService {
       final response = await apiClient.postWithToken('auth/register', {
         'name': warga.name,
         'email': warga.email,
-        'password': 'default123', 
-        'role': warga.role,
+        'password': 'default123',
+        'role': 'user',
         'sub_role': warga.subRole,
         'phone': warga.phone,
         'address': warga.address,
       }, token);
 
-      if (!response['success']) {
+      if (response['success'] == false) {
         throw Exception(response['message'] ?? 'Gagal menambahkan pengguna');
       }
 
-      if (response['user'] != null) {
-        return _parseUserData(response['user']);
-      }
-
-      return warga.copyWith(id: response['id'] ?? 0);
+      // Return parsed user data or create new with ID
+      return response['user'] != null
+          ? _parseUserData(response['user'])
+          : warga.copyWith(id: response['id'] ?? 0);
     } catch (e) {
       throw Exception('Error menambahkan pengguna: $e');
     }
@@ -94,23 +101,16 @@ class UserManagementService {
     try {
       final token = await _getToken();
 
-      final updateData = {
+      final response = await apiClient.putWithToken('auth/edit/${warga.id}', {
         'name': warga.name,
         'address': warga.address,
         'phone': warga.phone,
-      };
+      }, token);
 
-      final response = await apiClient.putWithToken(
-        'auth/edit/${warga.id}',
-        updateData,
-        token,
-      );
-
-      if (!response['success']) {
-        throw Exception(response['message'] ?? 'Gagal mengupdate pengguna');
-      }
-
-      return warga.copyWith(updatedAt: DateTime.now());
+      // Backend returns {message, user}
+      return response['user'] != null
+          ? _parseUserData(response['user'])
+          : warga.copyWith(updatedAt: DateTime.now());
     } catch (e) {
       throw Exception('Error mengupdate pengguna: $e');
     }
@@ -124,7 +124,8 @@ class UserManagementService {
         token,
       );
 
-      if (!response['success']) {
+      // Backend returns {message} on success
+      if (response['success'] == false) {
         throw Exception(response['message'] ?? 'Gagal menghapus pengguna');
       }
     } catch (e) {
