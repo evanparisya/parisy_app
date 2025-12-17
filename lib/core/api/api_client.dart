@@ -43,6 +43,7 @@ class ApiClient {
       if (data is Map<String, dynamic>) {
         data['success'] =
             response.statusCode == 200 || response.statusCode == 201;
+        data['statusCode'] = response.statusCode;
 
         // If status code indicates error but no message, add one
         if (!data['success'] && data['message'] == null) {

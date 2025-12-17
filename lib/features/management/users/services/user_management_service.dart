@@ -146,11 +146,25 @@ class UserManagementService {
         'sub_role': warga.subRole,
       }, token);
 
+      // Check for 409 Conflict (duplicate email)
+      if (response is Map<String, dynamic> && response['statusCode'] == 409) {
+        throw Exception(response['message'] ?? 'Email sudah digunakan');
+      }
+
+      // Check for other failures
+      if (response is Map<String, dynamic> && response['success'] == false) {
+        throw Exception(response['message'] ?? 'Gagal mengupdate pengguna');
+      }
+
       // Backend returns {message, user}
       return response['user'] != null
           ? _parseUserData(response['user'])
           : warga.copyWith(updatedAt: DateTime.now());
     } catch (e) {
+      // Re-throw if it's already an Exception with a specific message
+      if (e is Exception) {
+        rethrow;
+      }
       throw Exception('Error mengupdate pengguna: $e');
     }
   }
