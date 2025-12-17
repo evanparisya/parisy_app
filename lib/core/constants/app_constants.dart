@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 
 class AppConstants {
-  // API Configuration (Assume Flask runs on 5000)
-  static const String baseUrl = 'http://localhost:5000/api';
+  // API Configuration
+  static const String baseUrl = 'https://nitroir.pythonanywhere.com';
   static const int connectionTimeout = 30000; // 30 seconds
   static const int receiveTimeout = 30000; // 30 seconds
 
@@ -30,7 +30,7 @@ class AppStrings {
   static const String alreadyHaveAccount = 'Sudah punya akun?';
   static const String loginSuccess = 'Login berhasil';
   static const String registerSuccess = 'Daftar berhasil';
-  
+
   // Roles
   static const String roleAdmin = 'admin';
   static const String roleUser = 'user';
