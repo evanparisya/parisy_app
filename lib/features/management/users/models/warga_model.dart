@@ -7,8 +7,11 @@ class WargaModel {
   final String email;
   final String phone;
   final String address;
-  final String subRole; // rt, rw, bendahara, sekretaris, warga
+  final String subRole; 
   final DateTime createdAt;
+  final DateTime updatedAt;
+
+  String get role => 'user';
 
   WargaModel({
     required this.id,
@@ -17,8 +20,10 @@ class WargaModel {
     required this.phone,
     required this.address,
     required this.subRole,
-    required this.createdAt,
-  });
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   factory WargaModel.fromUserModel(UserModel user) {
     return WargaModel(
@@ -45,22 +50,26 @@ class WargaModel {
           : DateTime.now(),
     );
   }
-  
+
   WargaModel copyWith({
+    int? id,
     String? name,
     String? email,
     String? phone,
     String? address,
     String? subRole,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return WargaModel(
-      id: id,
+      id: id ?? this.id,
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       address: address ?? this.address,
       subRole: subRole ?? this.subRole,
-      createdAt: createdAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

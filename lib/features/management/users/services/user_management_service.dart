@@ -1,85 +1,167 @@
-// lib/features/management/users/services/user_management_service.dart
 import 'package:parisy_app/core/api/api_client.dart';
 import 'package:parisy_app/core/constants/app_constants.dart';
-import 'package:parisy_app/core/constants/dummy_data.dart';
 import 'package:parisy_app/features/management/users/models/warga_model.dart';
 import 'package:parisy_app/features/management/users/models/rt_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserManagementService {
   final ApiClient apiClient;
 
-  // Gunakan mock untuk pengembangan awal
-  static const bool useMock = true;
-
   UserManagementService({required this.apiClient});
 
-  // --- MOCK STORAGE (Perlu diimplementasi secara penuh di backend Flask) ---
-  static final List<WargaModel> _mockUsersList = DummyData.mockUsers.values
-      .map((u) => WargaModel.fromUserModel(u))
-      .toList();
-  // --- END MOCK STORAGE ---
-
-  Future<List<WargaModel>> getAllUsers() async {
-    if (useMock) {
-      await Future.delayed(Duration(seconds: 1));
-      // Hanya menampilkan warga dan RT/RW, tidak termasuk Admin
-      return List.from(_mockUsersList.where((u) => u.subRole != AppStrings.subRoleAdmin));
+  Future<String> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null || token.isEmpty) {
+      throw Exception('Token tidak ditemukan. Silakan login kembali.');
     }
-    throw UnimplementedError('API fetch all users belum diimplementasi');
+    return token;
   }
 
-  Future<List<WargaModel>> getWargaBySubRole(String subRole) async {
-    if (useMock) {
-      await Future.delayed(Duration(milliseconds: 500));
-      return List.from(_mockUsersList.where((u) => u.subRole == subRole));
+  WargaModel _parseUserData(Map<String, dynamic> json) {
+    return WargaModel(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      phone: json['phone'] ?? '',
+      address: json['address'] ?? '',
+      subRole: json['sub_role'] ?? 'warga',
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.tryParse(json['updated_at']) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+
+  Future<List<WargaModel>> getAllUsers() async {
+    try {
+      final token = await _getToken();
+      final response = await apiClient.getWithToken('auth/all', token);
+
+      if (!response['success']) {
+        throw Exception(response['message'] ?? 'Gagal mengambil data pengguna');
+      }
+
+      final List<dynamic> usersData = response['data'] ?? [];
+      return usersData.map((json) => _parseUserData(json)).toList();
+    } catch (e) {
+      throw Exception('Error mengambil data pengguna: $e');
     }
-    throw UnimplementedError();
+  }
+
+  Future<List<WargaModel>> getUsersBySubRole(String subRole) async {
+    try {
+      final allUsers = await getAllUsers();
+      return allUsers.where((user) => user.subRole == subRole).toList();
+    } catch (e) {
+      throw Exception(
+        'Error mengambil data pengguna dengan sub_role $subRole: $e',
+      );
+    }
   }
 
   Future<WargaModel> addUser(WargaModel warga) async {
-    if (useMock) {
-      await Future.delayed(Duration(seconds: 1));
-      final newId = _mockUsersList.map((u) => u.id).fold(0, (a, b) => a > b ? a : b) + 1;
-      final newWarga = warga.copyWith(
-        name: warga.name, // Diabaikan di sini, nanti di controller
-        email: warga.email,
-        phone: warga.phone,
-        address: warga.address,
-      );
-      _mockUsersList.add(newWarga);
-      return newWarga;
+    try {
+      final token = await _getToken();
+
+      final response = await apiClient.postWithToken('auth/register', {
+        'name': warga.name,
+        'email': warga.email,
+        'password': 'default123', 
+        'role': warga.role,
+        'sub_role': warga.subRole,
+        'phone': warga.phone,
+        'address': warga.address,
+      }, token);
+
+      if (!response['success']) {
+        throw Exception(response['message'] ?? 'Gagal menambahkan pengguna');
+      }
+
+      if (response['user'] != null) {
+        return _parseUserData(response['user']);
+      }
+
+      return warga.copyWith(id: response['id'] ?? 0);
+    } catch (e) {
+      throw Exception('Error menambahkan pengguna: $e');
     }
-    throw UnimplementedError('API add user belum diimplementasi');
   }
 
   Future<WargaModel> updateUser(WargaModel warga) async {
-    if (useMock) {
-      await Future.delayed(Duration(seconds: 1));
-      final index = _mockUsersList.indexWhere((u) => u.id == warga.id);
-      if (index >= 0) {
-        _mockUsersList[index] = warga;
-        return warga;
+    try {
+      final token = await _getToken();
+
+      final updateData = {
+        'name': warga.name,
+        'address': warga.address,
+        'phone': warga.phone,
+      };
+
+      final response = await apiClient.putWithToken(
+        'auth/edit/${warga.id}',
+        updateData,
+        token,
+      );
+
+      if (!response['success']) {
+        throw Exception(response['message'] ?? 'Gagal mengupdate pengguna');
       }
-      throw Exception('Warga tidak ditemukan');
+
+      return warga.copyWith(updatedAt: DateTime.now());
+    } catch (e) {
+      throw Exception('Error mengupdate pengguna: $e');
     }
-    throw UnimplementedError('API update user belum diimplementasi');
   }
 
   Future<void> deleteUser(int id) async {
-    if (useMock) {
-      await Future.delayed(Duration(seconds: 1));
-      _mockUsersList.removeWhere((u) => u.id == id);
-      return;
+    try {
+      final token = await _getToken();
+      final response = await apiClient.deleteWithToken(
+        'auth/delete/$id',
+        token,
+      );
+
+      if (!response['success']) {
+        throw Exception(response['message'] ?? 'Gagal menghapus pengguna');
+      }
+    } catch (e) {
+      throw Exception('Error menghapus pengguna: $e');
     }
-    throw UnimplementedError('API delete user belum diimplementasi');
   }
 
-  // --- Kelola RT (Fungsi khusus RW) ---
   Future<List<RtModel>> getAllRT() async {
-    if (useMock) {
-      await Future.delayed(Duration(milliseconds: 500));
-      return List.from(_mockUsersList.where((u) => u.subRole == AppStrings.subRoleRT).map((u) => RtModel.fromWargaModel(u)));
+    try {
+      final users = await getUsersBySubRole(AppStrings.subRoleRT);
+      return users.map((warga) => RtModel.fromWargaModel(warga)).toList();
+    } catch (e) {
+      throw Exception('Error mengambil data RT: $e');
     }
-    throw UnimplementedError();
+  }
+
+  Future<Map<String, dynamic>> getUserStats() async {
+    try {
+      final users = await getAllUsers();
+
+      final stats = <String, int>{
+        'total': users.length,
+        'admin': 0,
+        'warga': 0,
+        'rt': 0,
+        'rw': 0,
+        'sekretaris': 0,
+        'bendahara': 0,
+      };
+
+      for (var user in users) {
+        stats[user.subRole] = (stats[user.subRole] ?? 0) + 1;
+      }
+
+      return stats;
+    } catch (e) {
+      throw Exception('Error mengambil statistik pengguna: $e');
+    }
   }
 }

@@ -7,7 +7,6 @@ class AuthService {
 
   AuthService({required this.apiClient});
 
-  // Login
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final result = await apiClient.post('auth/login', {
@@ -16,23 +15,21 @@ class AuthService {
       });
 
       if (result['success'] == true) {
-        // Check if token and user exist in response
-        if (result['token'] != null && result['user'] != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('token', result['token'].toString());
-          await prefs.setString('user', json.encode(result['user']));
-        } else {
-          print('Warning: Login successful but missing token or user data');
+        if (result['token'] == null || result['user'] == null) {
           return {
             'success': false,
             'message': 'Response tidak lengkap dari server',
           };
         }
+
+        await _saveAuthData(
+          token: result['token'].toString(),
+          userData: result['user'],
+        );
       }
 
       return result;
     } catch (e) {
-      print('Login service error: $e');
       return {
         'success': false,
         'message': 'Terjadi kesalahan saat login: ${e.toString()}',
@@ -40,37 +37,50 @@ class AuthService {
     }
   }
 
-  // Register
   Future<Map<String, dynamic>> register(
     String name,
     String email,
     String address,
     String phone,
     String password,
-  String role,
-  String subRole
+    String role,
+    String subRole,
   ) async {
-    return await apiClient.post('auth/register', {
-      'name': name,
-      'email': email,
-      'address': address,
-      'phone': phone,
-      'password': password,
-      'role': role,
-      'sub_role': subRole,
-    });
+    try {
+      return await apiClient.post('auth/register', {
+        'name': name,
+        'email': email,
+        'address': address,
+        'phone': phone,
+        'password': password,
+        'role': role,
+        'sub_role': subRole,
+      });
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Terjadi kesalahan saat registrasi: ${e.toString()}',
+      };
+    }
   }
 
-  // Check if logged in
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    return token != null;
+    return token != null && token.isNotEmpty;
   }
 
-  // Logout
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+  }
+
+  Future<void> _saveAuthData({
+    required String token,
+    required Map<String, dynamic> userData,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    await prefs.setString('user', json.encode(userData));
   }
 }
