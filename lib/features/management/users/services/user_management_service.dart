@@ -140,8 +140,10 @@ class UserManagementService {
 
       final response = await apiClient.putWithToken('auth/edit/${warga.id}', {
         'name': warga.name,
+        'email': warga.email,
         'address': warga.address,
         'phone': warga.phone,
+        'sub_role': warga.subRole,
       }, token);
 
       // Backend returns {message, user}
