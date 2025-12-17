@@ -19,20 +19,26 @@ class UserManagementService {
   }
 
   WargaModel _parseUserData(Map<String, dynamic> json) {
-    return WargaModel(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
-      address: json['address'] ?? '',
-      subRole: json['sub_role'] ?? 'warga',
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
-          : DateTime.now(),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at']) ?? DateTime.now()
-          : DateTime.now(),
-    );
+    try {
+      return WargaModel(
+        id: json['id'] ?? 0,
+        name: json['name'] ?? '',
+        email: json['email'] ?? '',
+        phone: json['phone'] ?? '',
+        address: json['address'] ?? '',
+        subRole: json['sub_role'] ?? 'warga',
+        createdAt: json['created_at'] != null
+            ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
+            : DateTime.now(),
+        updatedAt: json['updated_at'] != null
+            ? DateTime.tryParse(json['updated_at']) ?? DateTime.now()
+            : DateTime.now(),
+      );
+    } catch (e) {
+      print('Error parsing user data: $e');
+      print('JSON data: $json');
+      rethrow;
+    }
   }
 
   Future<List<WargaModel>> getAllUsers() async {
@@ -40,18 +46,25 @@ class UserManagementService {
       final token = await _getToken();
       final response = await apiClient.getWithToken('auth/all', token);
 
+      print('getAllUsers response type: ${response.runtimeType}');
+
       // Backend returns array directly
       if (response is List) {
-        return (response as List)
+        print('Response is List with ${response.length} items');
+        final users = (response as List)
             .map((item) => item as Map<String, dynamic>)
             .map(_parseUserData)
             .toList();
+        print('Successfully parsed ${users.length} users');
+        return users;
       }
 
       // Fallback for wrapped response (when response is a Map)
       if (response is Map<String, dynamic>) {
+        print('Response is Map with keys: ${response.keys}');
         final usersData = response['data'];
         if (usersData is List) {
+          print('Found data array with ${usersData.length} items');
           return (usersData as List)
               .map((item) => item as Map<String, dynamic>)
               .map(_parseUserData)
@@ -60,8 +73,10 @@ class UserManagementService {
       }
 
       // If we reach here, the response format is unexpected
+      print('Unexpected response format: $response');
       throw Exception('Format respons tidak valid: ${response.runtimeType}');
     } catch (e) {
+      print('getAllUsers error: $e');
       throw Exception('Error mengambil data pengguna: $e');
     }
   }
