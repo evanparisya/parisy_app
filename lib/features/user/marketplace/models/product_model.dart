@@ -30,16 +30,32 @@ class ProductModel {
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     // Memastikan harga dan stok di-parse dengan benar
+    // Backend mengirim price sebagai string, perlu di-parse
+    double parsePrice(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
+    int parseInt(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      if (value is num) return value.toInt();
+      return 0;
+    }
+
     return ProductModel(
-      id: json['id'] ?? 0,
+      id: parseInt(json['id']),
       name: json['name'] ?? '',
-      description: json['desc'] ?? '',
-      price: (json['price'] as num? ?? 0.0).toDouble(),
-      stock: json['stock'] ?? 0,
+      description: json['description'] ?? json['desc'] ?? '',
+      price: parsePrice(json['price']),
+      stock: parseInt(json['stock']),
       imageUrl: json['image'] ?? json['image_url'] ?? '',
       category: json['category'] ?? 'daun',
       status: json['status'] ?? 'available',
-      createdBy: json['created_by'] ?? 0,
+      createdBy: parseInt(json['created_by']),
       createdByName: json['created_by_name'],
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
@@ -97,7 +113,7 @@ class AddProductRequest {
   final double price;
   final int stock;
   final String category;
-  final String imageBase64; 
+  final String imageBase64;
 
   AddProductRequest({
     required this.name,
