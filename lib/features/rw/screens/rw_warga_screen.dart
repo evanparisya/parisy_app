@@ -40,7 +40,13 @@ class _RwWargaScreenState extends State<RwWargaScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.primaryBlack),
-        title: Text('Data Seluruh Warga (Read Only)', style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Data Warga & RT (Read Only)',
+          style: TextStyle(
+            color: AppColors.primaryBlack,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -50,10 +56,15 @@ class _RwWargaScreenState extends State<RwWargaScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                labelText: 'Cari Warga',
+                labelText: 'Cari Warga atau RT',
                 hintText: 'Cari nama atau email',
-                prefixIcon: Icon(Icons.search, color: AppColors.neutralDarkGray),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AppColors.neutralDarkGray,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onChanged: (value) {
                 // Trigger reload/filter
@@ -66,17 +77,26 @@ class _RwWargaScreenState extends State<RwWargaScreen> {
           Expanded(
             child: Consumer<UserManagementController>(
               builder: (context, controller, _) {
-                if (controller.state == UserManagementState.loading && controller.wargaList.isEmpty) {
+                if (controller.isLoading && controller.wargaList.isEmpty) {
                   return Center(child: CircularProgressIndicator());
                 }
 
                 if (controller.wargaList.isEmpty) {
-                  return EmptyStateWidget(message: 'Tidak ada data warga di lingkungan RW ini.');
+                  return EmptyStateWidget(
+                    message: 'Tidak ada data warga atau RT.',
+                  );
                 }
-                
+
+                // Filter: hanya tampilkan sub_role 'warga' dan 'rt'
                 final filteredList = controller.wargaList.where((w) {
+                  final isWargaOrRt = w.subRole == 'warga' || w.subRole == 'rt';
+                  if (!isWargaOrRt) return false;
+
                   final query = _searchController.text.toLowerCase();
-                  return w.name.toLowerCase().contains(query) || w.email.toLowerCase().contains(query);
+                  if (query.isEmpty) return true;
+
+                  return w.name.toLowerCase().contains(query) ||
+                      w.email.toLowerCase().contains(query);
                 }).toList();
 
                 return ListView.builder(
@@ -99,7 +119,7 @@ class _RwWargaScreenState extends State<RwWargaScreen> {
 // --- Helper Card Warga (Hanya Display) ---
 class _WargaCard extends StatelessWidget {
   final WargaModel warga;
-  final bool isReadOnly; 
+  final bool isReadOnly;
   const _WargaCard({required this.warga, required this.isReadOnly});
 
   @override
@@ -116,19 +136,59 @@ class _WargaCard extends StatelessWidget {
             CircleAvatar(
               radius: 20,
               backgroundColor: AppColors.primaryGreen.withOpacity(0.1),
-              child: Text(warga.subRole.substring(0, 1).toUpperCase(), style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+              child: Text(
+                warga.subRole.substring(0, 1).toUpperCase(),
+                style: TextStyle(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(warga.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-                  Text(warga.email, style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
+                  Text(
+                    warga.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlack,
+                    ),
+                  ),
+                  Text(
+                    warga.email,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                  ),
                   SizedBox(height: 8),
-                  Text('Role: ${warga.subRole.toUpperCase()}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primaryGreen)),
-                  Text('Telp: ${warga.phone}', style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
-                  Text('Alamat: ${warga.address}', style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    'Role: ${warga.subRole.toUpperCase()}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                  Text(
+                    'Telp: ${warga.phone}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                  ),
+                  Text(
+                    'Alamat: ${warga.address}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),

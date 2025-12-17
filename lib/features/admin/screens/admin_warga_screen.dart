@@ -39,7 +39,13 @@ class _AdminWargaScreenState extends State<AdminWargaScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.primaryBlack),
-        title: Text('CRUD Data Warga', style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold)),
+        title: Text(
+          'CRUD Data Warga',
+          style: TextStyle(
+            color: AppColors.primaryBlack,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -51,8 +57,13 @@ class _AdminWargaScreenState extends State<AdminWargaScreen> {
               decoration: InputDecoration(
                 labelText: 'Cari Warga',
                 hintText: 'Cari nama atau email',
-                prefixIcon: Icon(Icons.search, color: AppColors.neutralDarkGray),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AppColors.neutralDarkGray,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onChanged: (value) {
                 context.read<UserManagementController>().loadAllWarga();
@@ -64,17 +75,18 @@ class _AdminWargaScreenState extends State<AdminWargaScreen> {
           Expanded(
             child: Consumer<UserManagementController>(
               builder: (context, controller, _) {
-                if (controller.state == UserManagementState.loading && controller.wargaList.isEmpty) {
+                if (controller.isLoading && controller.wargaList.isEmpty) {
                   return Center(child: CircularProgressIndicator());
                 }
 
                 if (controller.wargaList.isEmpty) {
                   return EmptyStateWidget(message: 'Tidak ada data warga.');
                 }
-                
+
                 final filteredList = controller.wargaList.where((w) {
                   final query = _searchController.text.toLowerCase();
-                  return w.name.toLowerCase().contains(query) || w.email.toLowerCase().contains(query);
+                  return w.name.toLowerCase().contains(query) ||
+                      w.email.toLowerCase().contains(query);
                 }).toList();
 
                 return ListView.builder(
@@ -84,9 +96,10 @@ class _AdminWargaScreenState extends State<AdminWargaScreen> {
                     final warga = filteredList[index];
                     return _WargaCard(
                       warga: warga,
-                      isReadOnly: false, 
+                      isReadOnly: false,
                       onEdit: () => _showWargaFormDialog(context, warga),
-                      onDelete: () => _showDeleteDialog(context, warga.id, warga.name),
+                      onDelete: () =>
+                          _showDeleteDialog(context, warga.id, warga.name),
                     );
                   },
                 );
@@ -117,7 +130,10 @@ class _AdminWargaScreenState extends State<AdminWargaScreen> {
         title: Text('Hapus Warga'),
         content: Text('Apakah Anda yakin ingin menghapus $name?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Batal'),
+          ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
@@ -134,12 +150,12 @@ class _AdminWargaScreenState extends State<AdminWargaScreen> {
 // --- Helper Card untuk Warga ---
 class _WargaCard extends StatelessWidget {
   final WargaModel warga;
-  final bool isReadOnly; 
+  final bool isReadOnly;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const _WargaCard({
-    required this.warga, 
+    required this.warga,
     required this.isReadOnly,
     this.onEdit,
     this.onDelete,
@@ -159,27 +175,81 @@ class _WargaCard extends StatelessWidget {
             CircleAvatar(
               radius: 20,
               backgroundColor: AppColors.primaryGreen.withOpacity(0.1),
-              child: Text(warga.subRole.substring(0, 1).toUpperCase(), style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+              child: Text(
+                warga.subRole.substring(0, 1).toUpperCase(),
+                style: TextStyle(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(warga.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-                  Text(warga.email, style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
+                  Text(
+                    warga.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlack,
+                    ),
+                  ),
+                  Text(
+                    warga.email,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                  ),
                   SizedBox(height: 8),
-                  Text('Role: ${warga.subRole.toUpperCase()}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primaryGreen)),
-                  Text('Telp: ${warga.phone}', style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
-                  Text('Alamat: ${warga.address}', style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    'Role: ${warga.subRole.toUpperCase()}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                  Text(
+                    'Telp: ${warga.phone}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                  ),
+                  Text(
+                    'Alamat: ${warga.address}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
             if (!isReadOnly)
               Row(
                 children: [
-                  IconButton(icon: Icon(Icons.edit, color: AppColors.primaryBlack, size: 20), onPressed: onEdit),
-                  IconButton(icon: Icon(Icons.delete, color: AppColors.errorRed, size: 20), onPressed: onDelete),
+                  IconButton(
+                    icon: Icon(
+                      Icons.edit,
+                      color: AppColors.primaryBlack,
+                      size: 20,
+                    ),
+                    onPressed: onEdit,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete,
+                      color: AppColors.errorRed,
+                      size: 20,
+                    ),
+                    onPressed: onDelete,
+                  ),
                 ],
               ),
           ],
@@ -208,11 +278,11 @@ class _WargaFormDialogState extends State<_WargaFormDialog> {
   String? _selectedSubRole;
 
   final List<String> _managementRoles = [
-    AppStrings.subRoleWarga, 
-    AppStrings.subRoleRT, 
-    AppStrings.subRoleRW, 
-    AppStrings.subRoleBendahara, 
-    AppStrings.subRoleSekretaris
+    AppStrings.subRoleWarga,
+    AppStrings.subRoleRT,
+    AppStrings.subRoleRW,
+    AppStrings.subRoleBendahara,
+    AppStrings.subRoleSekretaris,
   ];
 
   @override
@@ -221,7 +291,9 @@ class _WargaFormDialogState extends State<_WargaFormDialog> {
     _nameController = TextEditingController(text: widget.warga?.name ?? '');
     _emailController = TextEditingController(text: widget.warga?.email ?? '');
     _phoneController = TextEditingController(text: widget.warga?.phone ?? '');
-    _addressController = TextEditingController(text: widget.warga?.address ?? '');
+    _addressController = TextEditingController(
+      text: widget.warga?.address ?? '',
+    );
     _selectedSubRole = widget.warga?.subRole ?? AppStrings.subRoleWarga;
   }
 
@@ -233,7 +305,7 @@ class _WargaFormDialogState extends State<_WargaFormDialog> {
     _addressController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final isNew = widget.warga == null;
@@ -246,18 +318,45 @@ class _WargaFormDialogState extends State<_WargaFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              InputField(label: 'Nama', hint: 'Nama Lengkap', controller: _nameController),
+              InputField(
+                label: 'Nama',
+                hint: 'Nama Lengkap',
+                controller: _nameController,
+              ),
               SizedBox(height: 12),
-              InputField(label: 'Email', hint: 'Email', controller: _emailController, readOnly: !isNew),
+              InputField(
+                label: 'Email',
+                hint: 'Email',
+                controller: _emailController,
+                readOnly: !isNew,
+              ),
               SizedBox(height: 12),
-              InputField(label: 'No. Telepon', hint: 'Nomor Telepon', controller: _phoneController, keyboardType: TextInputType.phone),
+              InputField(
+                label: 'No. Telepon',
+                hint: 'Nomor Telepon',
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+              ),
               SizedBox(height: 12),
-              InputField(label: 'Alamat', hint: 'Alamat Tinggal', controller: _addressController),
+              InputField(
+                label: 'Alamat',
+                hint: 'Alamat Tinggal',
+                controller: _addressController,
+              ),
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'Peran Manajemen (Sub-Role)'),
+                decoration: InputDecoration(
+                  labelText: 'Peran Manajemen (Sub-Role)',
+                ),
                 initialValue: _selectedSubRole,
-                items: _managementRoles.map((r) => DropdownMenuItem(value: r, child: Text(r.toUpperCase()))).toList(),
+                items: _managementRoles
+                    .map(
+                      (r) => DropdownMenuItem(
+                        value: r,
+                        child: Text(r.toUpperCase()),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) => setState(() => _selectedSubRole = value),
               ),
             ],
@@ -265,28 +364,34 @@ class _WargaFormDialogState extends State<_WargaFormDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text('Batal')),
-        TextButton(onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            final newWarga = WargaModel(
-              id: widget.warga?.id ?? 0,
-              name: _nameController.text,
-              email: _emailController.text,
-              phone: _phoneController.text,
-              address: _addressController.text,
-              subRole: _selectedSubRole!,
-              createdAt: widget.warga?.createdAt ?? DateTime.now(),
-            );
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Batal'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              final newWarga = WargaModel(
+                id: widget.warga?.id ?? 0,
+                name: _nameController.text,
+                email: _emailController.text,
+                phone: _phoneController.text,
+                address: _addressController.text,
+                subRole: _selectedSubRole!,
+                createdAt: widget.warga?.createdAt ?? DateTime.now(),
+              );
 
-            final controller = context.read<UserManagementController>();
-            if (isNew) {
-              controller.addWarga(newWarga); 
-            } else {
-              controller.updateWarga(newWarga); 
+              final controller = context.read<UserManagementController>();
+              if (isNew) {
+                controller.addWarga(newWarga);
+              } else {
+                controller.updateWarga(newWarga);
+              }
+              Navigator.pop(context);
             }
-            Navigator.pop(context);
-          }
-        }, child: Text('Simpan')),
+          },
+          child: Text('Simpan'),
+        ),
       ],
     );
   }

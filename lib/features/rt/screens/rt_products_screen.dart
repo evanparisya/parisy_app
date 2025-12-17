@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:parisy_app/core/constants/app_constants.dart';
 import 'package:parisy_app/core/widgets/common_widgets.dart';
 import 'package:parisy_app/features/user/marketplace/models/product_model.dart';
-import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart'; 
+import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart';
 
 class RtProductsScreen extends StatefulWidget {
   const RtProductsScreen({super.key});
@@ -32,7 +32,7 @@ class _RtProductsScreenState extends State<RtProductsScreen> {
     // namun kita perlu memastikan widget masih hidup sebelum memanggil notifyListeners
     Future.microtask(() {
       if (mounted) {
-        context.read<MarketplaceController>().loadInitialData();
+        context.read<MarketplaceController>().loadAdminProducts();
       }
     });
   }
@@ -51,7 +51,13 @@ class _RtProductsScreenState extends State<RtProductsScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.primaryBlack),
-        title: Text('Kelola Barang Jual Beli (CRU)', style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Kelola Barang Jual Beli (CRU)',
+          style: TextStyle(
+            color: AppColors.primaryBlack,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -63,8 +69,13 @@ class _RtProductsScreenState extends State<RtProductsScreen> {
               decoration: InputDecoration(
                 labelText: 'Cari Barang',
                 hintText: 'Cari nama atau deskripsi',
-                prefixIcon: Icon(Icons.search, color: AppColors.neutralDarkGray),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AppColors.neutralDarkGray,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onChanged: (value) {
                 // Perbaikan 3: Tambahkan mounted check di sini juga, meskipun tidak ada await
@@ -82,7 +93,8 @@ class _RtProductsScreenState extends State<RtProductsScreen> {
           Expanded(
             child: Consumer<MarketplaceController>(
               builder: (context, controller, _) {
-                if (controller.state == MarketplaceState.loading && controller.products.isEmpty) {
+                if (controller.state == MarketplaceState.loading &&
+                    controller.products.isEmpty) {
                   return Center(child: CircularProgressIndicator());
                 }
 
@@ -98,8 +110,11 @@ class _RtProductsScreenState extends State<RtProductsScreen> {
                     return _ProductManagementCard(
                       product: product,
                       onEdit: () => _showProductDialog(context, product),
-                      onDelete: () { /* Delete is removed for CRU */ },
-                      isCru: true, // Beri nilai default di sini atau hapus dari constructor jika tidak digunakan
+                      onDelete: () {
+                        /* Delete is removed for CRU */
+                      },
+                      isCru:
+                          true, // Beri nilai default di sini atau hapus dari constructor jika tidak digunakan
                     );
                   },
                 );
@@ -119,7 +134,8 @@ class _RtProductsScreenState extends State<RtProductsScreen> {
   void _showProductDialog(BuildContext context, ProductModel? product) {
     showDialog(
       context: context,
-      builder: (context) => _ProductFormDialog(product: product, isCru: true), // Kirim flag CRU
+      builder: (context) =>
+          _ProductFormDialog(product: product, isCru: true), // Kirim flag CRU
     );
   }
 }
@@ -133,9 +149,9 @@ class _ProductManagementCard extends StatelessWidget {
 
   // Perbaikan 1: Inisialisasi isCru di constructor
   const _ProductManagementCard({
-    required this.product, 
-    required this.onEdit, 
-    required this.onDelete, 
+    required this.product,
+    required this.onEdit,
+    required this.onDelete,
     this.isCru = true, // Tambahkan nilai default
   });
 
@@ -165,18 +181,52 @@ class _ProductManagementCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-                  Text('Rp ${product.price.toStringAsFixed(0)} | Stok: ${product.stock}', style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
+                  Text(
+                    product.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlack,
+                    ),
+                  ),
+                  Text(
+                    'Rp ${product.price.toStringAsFixed(0)} | Stok: ${product.stock}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                  ),
                   SizedBox(height: 4),
-                  Text('Kategori: ${product.category}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primaryGreen)),
+                  Text(
+                    'Kategori: ${product.category}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
                 ],
               ),
             ),
             Row(
               children: [
-                IconButton(icon: Icon(Icons.edit, color: AppColors.primaryBlack, size: 20), onPressed: onEdit),
+                IconButton(
+                  icon: Icon(
+                    Icons.edit,
+                    color: AppColors.primaryBlack,
+                    size: 20,
+                  ),
+                  onPressed: onEdit,
+                ),
                 if (!isCru) // Jika bukan CRU (yaitu CRUD), tampilkan Delete
-                  IconButton(icon: Icon(Icons.delete, color: AppColors.errorRed, size: 20), onPressed: onDelete),
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete,
+                      color: AppColors.errorRed,
+                      size: 20,
+                    ),
+                    onPressed: onDelete,
+                  ),
               ],
             ),
           ],
@@ -204,19 +254,25 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   late TextEditingController _priceController;
   late TextEditingController _stockController;
   String? _selectedCategory;
-  
+
   final List<String> _categories = ['daun', 'akar', 'bunga', 'buah'];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.product?.name ?? '');
-    _descController = TextEditingController(text: widget.product?.description ?? '');
-    _priceController = TextEditingController(text: widget.product?.price.toString() ?? '');
-    _stockController = TextEditingController(text: widget.product?.stock.toString() ?? '');
+    _descController = TextEditingController(
+      text: widget.product?.description ?? '',
+    );
+    _priceController = TextEditingController(
+      text: widget.product?.price.toString() ?? '',
+    );
+    _stockController = TextEditingController(
+      text: widget.product?.stock.toString() ?? '',
+    );
     _selectedCategory = widget.product?.category;
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -227,35 +283,70 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              InputField(label: 'Nama', hint: 'Nama Barang', controller: _nameController),
+              InputField(
+                label: 'Nama',
+                hint: 'Nama Barang',
+                controller: _nameController,
+              ),
               SizedBox(height: 12),
-              InputField(label: 'Deskripsi', hint: 'Deskripsi Barang', controller: _descController, maxLines: 2),
+              InputField(
+                label: 'Deskripsi',
+                hint: 'Deskripsi Barang',
+                controller: _descController,
+                maxLines: 2,
+              ),
               SizedBox(height: 12),
-              InputField(label: 'Harga', hint: 'Harga Jual', controller: _priceController, keyboardType: TextInputType.number),
+              InputField(
+                label: 'Harga',
+                hint: 'Harga Jual',
+                controller: _priceController,
+                keyboardType: TextInputType.number,
+              ),
               SizedBox(height: 12),
-              InputField(label: 'Stok', hint: 'Stok Tersedia', controller: _stockController, keyboardType: TextInputType.number),
+              InputField(
+                label: 'Stok',
+                hint: 'Stok Tersedia',
+                controller: _stockController,
+                keyboardType: TextInputType.number,
+              ),
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(labelText: 'Kategori'),
                 // Perbaikan: Menggunakan initialValue untuk widget stateful
-                value: _selectedCategory, 
-                items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.toUpperCase()))).toList(),
+                value: _selectedCategory,
+                items: _categories
+                    .map(
+                      (c) => DropdownMenuItem(
+                        value: c,
+                        child: Text(c.toUpperCase()),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) => setState(() => _selectedCategory = value),
               ),
               SizedBox(height: 12),
-              Text('Image URL/Upload diabaikan untuk demo ini', style: TextStyle(fontSize: 10, color: AppColors.errorRed)),
+              Text(
+                'Image URL/Upload diabaikan untuk demo ini',
+                style: TextStyle(fontSize: 10, color: AppColors.errorRed),
+              ),
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text('Batal')),
-        TextButton(onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            // Logika save: Asumsi MarketplaceController menangani C/R/U untuk Vegetable Model
-            Navigator.pop(context);
-          }
-        }, child: Text('Simpan')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Batal'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              // Logika save: Asumsi MarketplaceController menangani C/R/U untuk Vegetable Model
+              Navigator.pop(context);
+            }
+          },
+          child: Text('Simpan'),
+        ),
       ],
     );
   }

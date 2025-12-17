@@ -6,7 +6,6 @@ import 'package:parisy_app/features/auth/controllers/auth_controller.dart';
 import 'package:parisy_app/features/management/users/controllers/user_management_controller.dart';
 import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart';
 import 'package:parisy_app/features/user/profile/screens/profile_screen.dart'; // Import ProfileScreen
-import 'rw_rt_management_screen.dart';
 import 'rw_warga_screen.dart';
 import 'rw_products_screen.dart';
 
@@ -36,7 +35,6 @@ class _RwDashboardScreenState extends State<RwDashboardScreen> {
   // List of screens for BottomNavBar (4 items)
   late final List<Widget> _widgetOptions = <Widget>[
     const _RwDashboardContent(), // Tab 0: Dashboard Content
-    const RwRtManagementScreen(), // Tab 1: Kelola RT
     const RwWargaScreen(), // Tab 2: Data Warga
     const RwProductsScreen(), // Tab 3: Kelola Barang
   ];

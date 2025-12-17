@@ -4,8 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:parisy_app/core/constants/app_constants.dart';
 import 'package:parisy_app/core/widgets/common_widgets.dart';
 import 'package:parisy_app/features/user/marketplace/models/product_model.dart';
-import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart'; 
-import 'dart:io';
+import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart';
 
 class AdminProductsScreen extends StatefulWidget {
   const AdminProductsScreen({super.key});
@@ -22,7 +21,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     super.initState();
     _searchController = TextEditingController();
     Future.microtask(() {
-      context.read<MarketplaceController>().loadInitialData();
+      if (mounted) {
+        context.read<MarketplaceController>().loadAdminProducts();
+      }
     });
   }
 
@@ -40,7 +41,13 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.primaryBlack),
-        title: Text('CRUD Barang Jual Beli', style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold)),
+        title: Text(
+          'CRUD Barang Jual Beli',
+          style: TextStyle(
+            color: AppColors.primaryBlack,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -52,8 +59,13 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
               decoration: InputDecoration(
                 labelText: 'Cari Barang',
                 hintText: 'Cari nama atau deskripsi',
-                prefixIcon: Icon(Icons.search, color: AppColors.neutralDarkGray),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AppColors.neutralDarkGray,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onChanged: (value) {
                 if (value.isNotEmpty) {
@@ -69,7 +81,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
           Expanded(
             child: Consumer<MarketplaceController>(
               builder: (context, controller, _) {
-                if (controller.state == MarketplaceState.loading && controller.products.isEmpty) {
+                if (controller.state == MarketplaceState.loading &&
+                    controller.products.isEmpty) {
                   return Center(child: CircularProgressIndicator());
                 }
 
@@ -85,7 +98,8 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                     return _ProductManagementCard(
                       product: product,
                       onEdit: () => _showProductDialog(context, product),
-                      onDelete: () => _showDeleteDialog(context, product.id, product.name),
+                      onDelete: () =>
+                          _showDeleteDialog(context, product.id, product.name),
                       isCru: false, // Menandakan ini adalah CRUD
                     );
                   },
@@ -117,7 +131,10 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         title: Text('Hapus Barang'),
         content: Text('Apakah Anda yakin ingin menghapus $name?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Batal'),
+          ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
@@ -139,7 +156,12 @@ class _ProductManagementCard extends StatelessWidget {
   final VoidCallback onDelete;
   final bool isCru;
 
-  const _ProductManagementCard({required this.product, required this.onEdit, required this.onDelete, this.isCru = true});
+  const _ProductManagementCard({
+    required this.product,
+    required this.onEdit,
+    required this.onDelete,
+    this.isCru = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -166,18 +188,52 @@ class _ProductManagementCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(product.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-                  Text('Rp ${product.price.toStringAsFixed(0)} | Stok: ${product.stock}', style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
+                  Text(
+                    product.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlack,
+                    ),
+                  ),
+                  Text(
+                    'Rp ${product.price.toStringAsFixed(0)} | Stok: ${product.stock}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                  ),
                   SizedBox(height: 4),
-                  Text('Kategori: ${product.category}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primaryGreen)),
+                  Text(
+                    'Kategori: ${product.category}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
                 ],
               ),
             ),
             Row(
               children: [
-                IconButton(icon: Icon(Icons.edit, color: AppColors.primaryBlack, size: 20), onPressed: onEdit),
+                IconButton(
+                  icon: Icon(
+                    Icons.edit,
+                    color: AppColors.primaryBlack,
+                    size: 20,
+                  ),
+                  onPressed: onEdit,
+                ),
                 if (!isCru) // Jika ini CRUD (Admin), tampilkan delete
-                  IconButton(icon: Icon(Icons.delete, color: AppColors.errorRed, size: 20), onPressed: onDelete),
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete,
+                      color: AppColors.errorRed,
+                      size: 20,
+                    ),
+                    onPressed: onDelete,
+                  ),
               ],
             ),
           ],
@@ -203,19 +259,25 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   late TextEditingController _priceController;
   late TextEditingController _stockController;
   String? _selectedCategory;
-  
+
   final List<String> _categories = ['daun', 'akar', 'bunga', 'buah'];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.product?.name ?? '');
-    _descController = TextEditingController(text: widget.product?.description ?? '');
-    _priceController = TextEditingController(text: widget.product?.price.toString() ?? '');
-    _stockController = TextEditingController(text: widget.product?.stock.toString() ?? '');
+    _descController = TextEditingController(
+      text: widget.product?.description ?? '',
+    );
+    _priceController = TextEditingController(
+      text: widget.product?.price.toString() ?? '',
+    );
+    _stockController = TextEditingController(
+      text: widget.product?.stock.toString() ?? '',
+    );
     _selectedCategory = widget.product?.category;
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -226,34 +288,69 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              InputField(label: 'Nama', hint: 'Nama Barang', controller: _nameController),
+              InputField(
+                label: 'Nama',
+                hint: 'Nama Barang',
+                controller: _nameController,
+              ),
               SizedBox(height: 12),
-              InputField(label: 'Deskripsi', hint: 'Deskripsi Barang', controller: _descController, maxLines: 2),
+              InputField(
+                label: 'Deskripsi',
+                hint: 'Deskripsi Barang',
+                controller: _descController,
+                maxLines: 2,
+              ),
               SizedBox(height: 12),
-              InputField(label: 'Harga', hint: 'Harga Jual', controller: _priceController, keyboardType: TextInputType.number),
+              InputField(
+                label: 'Harga',
+                hint: 'Harga Jual',
+                controller: _priceController,
+                keyboardType: TextInputType.number,
+              ),
               SizedBox(height: 12),
-              InputField(label: 'Stok', hint: 'Stok Tersedia', controller: _stockController, keyboardType: TextInputType.number),
+              InputField(
+                label: 'Stok',
+                hint: 'Stok Tersedia',
+                controller: _stockController,
+                keyboardType: TextInputType.number,
+              ),
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(labelText: 'Kategori'),
                 initialValue: _selectedCategory,
-                items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.toUpperCase()))).toList(),
+                items: _categories
+                    .map(
+                      (c) => DropdownMenuItem(
+                        value: c,
+                        child: Text(c.toUpperCase()),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) => setState(() => _selectedCategory = value),
               ),
               SizedBox(height: 12),
-              Text('Image URL/Upload diabaikan untuk demo ini', style: TextStyle(fontSize: 10, color: AppColors.errorRed)),
+              Text(
+                'Image URL/Upload diabaikan untuk demo ini',
+                style: TextStyle(fontSize: 10, color: AppColors.errorRed),
+              ),
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text('Batal')),
-        TextButton(onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            // Logika save
-            Navigator.pop(context);
-          }
-        }, child: Text('Simpan')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Batal'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              // Logika save
+              Navigator.pop(context);
+            }
+          },
+          child: Text('Simpan'),
+        ),
       ],
     );
   }

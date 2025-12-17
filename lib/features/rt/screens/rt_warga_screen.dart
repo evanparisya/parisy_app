@@ -22,7 +22,9 @@ class _RtWargaScreenState extends State<RtWargaScreen> {
     _searchController = TextEditingController();
     // Load data warga RT (sudah difilter di dashboard/controller RT)
     Future.microtask(() {
-      context.read<UserManagementController>().loadWargaByRT(AppStrings.subRoleRT);
+      context.read<UserManagementController>().loadWargaByRT(
+        AppStrings.subRoleRT,
+      );
     });
   }
 
@@ -40,7 +42,13 @@ class _RtWargaScreenState extends State<RtWargaScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.primaryBlack),
-        title: Text('Data Warga RT (Read Only)', style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Data Warga RT (Read Only)',
+          style: TextStyle(
+            color: AppColors.primaryBlack,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -52,12 +60,19 @@ class _RtWargaScreenState extends State<RtWargaScreen> {
               decoration: InputDecoration(
                 labelText: 'Cari Warga',
                 hintText: 'Cari nama atau email',
-                prefixIcon: Icon(Icons.search, color: AppColors.neutralDarkGray),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AppColors.neutralDarkGray,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               onChanged: (value) {
                 // Dalam implementasi nyata, ini akan memanggil API/filter lokal
-                context.read<UserManagementController>().loadWargaByRT(AppStrings.subRoleRT);
+                context.read<UserManagementController>().loadWargaByRT(
+                  AppStrings.subRoleRT,
+                );
               },
             ),
           ),
@@ -66,17 +81,20 @@ class _RtWargaScreenState extends State<RtWargaScreen> {
           Expanded(
             child: Consumer<UserManagementController>(
               builder: (context, controller, _) {
-                if (controller.state == UserManagementState.loading && controller.wargaList.isEmpty) {
+                if (controller.isLoading && controller.wargaList.isEmpty) {
                   return Center(child: CircularProgressIndicator());
                 }
 
                 if (controller.wargaList.isEmpty) {
-                  return EmptyStateWidget(message: 'Tidak ada data warga di lingkungan RT ini.');
+                  return EmptyStateWidget(
+                    message: 'Tidak ada data warga di lingkungan RT ini.',
+                  );
                 }
-                
+
                 final filteredList = controller.wargaList.where((w) {
                   final query = _searchController.text.toLowerCase();
-                  return w.name.toLowerCase().contains(query) || w.email.toLowerCase().contains(query);
+                  return w.name.toLowerCase().contains(query) ||
+                      w.email.toLowerCase().contains(query);
                 }).toList();
 
                 return ListView.builder(
@@ -84,7 +102,10 @@ class _RtWargaScreenState extends State<RtWargaScreen> {
                   itemCount: filteredList.length,
                   itemBuilder: (context, index) {
                     final warga = filteredList[index];
-                    return _WargaCard(warga: warga, isReadOnly: true); // Kirim flag ReadOnly
+                    return _WargaCard(
+                      warga: warga,
+                      isReadOnly: true,
+                    ); // Kirim flag ReadOnly
                   },
                 );
               },
@@ -99,7 +120,7 @@ class _RtWargaScreenState extends State<RtWargaScreen> {
 // --- Helper Card (Sama seperti Admin Warga, tapi tanpa edit/delete) ---
 class _WargaCard extends StatelessWidget {
   final WargaModel warga;
-  final bool isReadOnly; 
+  final bool isReadOnly;
 
   const _WargaCard({required this.warga, required this.isReadOnly});
 
@@ -117,19 +138,59 @@ class _WargaCard extends StatelessWidget {
             CircleAvatar(
               radius: 20,
               backgroundColor: AppColors.primaryGreen.withOpacity(0.1),
-              child: Text(warga.subRole.substring(0, 1).toUpperCase(), style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+              child: Text(
+                warga.subRole.substring(0, 1).toUpperCase(),
+                style: TextStyle(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(warga.name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-                  Text(warga.email, style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
+                  Text(
+                    warga.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlack,
+                    ),
+                  ),
+                  Text(
+                    warga.email,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                  ),
                   SizedBox(height: 8),
-                  Text('Role: ${warga.subRole.toUpperCase()}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.primaryGreen)),
-                  Text('Telp: ${warga.phone}', style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
-                  Text('Alamat: ${warga.address}', style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    'Role: ${warga.subRole.toUpperCase()}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                  Text(
+                    'Telp: ${warga.phone}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                  ),
+                  Text(
+                    'Alamat: ${warga.address}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.neutralDarkGray,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
