@@ -48,10 +48,10 @@ class UserManagementService {
 
       print('getAllUsers response type: ${response.runtimeType}');
 
-      // Backend returns array directly
+      // Backend returns array directly, now properly handled by ApiClient
       if (response is List) {
         print('Response is List with ${response.length} items');
-        final users = (response as List)
+        final users = response
             .map((item) => item as Map<String, dynamic>)
             .map(_parseUserData)
             .toList();
@@ -62,13 +62,28 @@ class UserManagementService {
       // Fallback for wrapped response (when response is a Map)
       if (response is Map<String, dynamic>) {
         print('Response is Map with keys: ${response.keys}');
-        final usersData = response['data'];
+
+        // Try 'data' key (common wrapper)
+        var usersData = response['data'];
+
+        // If not found, try 'users' key
+        if (usersData == null) {
+          usersData = response['users'];
+        }
+
         if (usersData is List) {
-          print('Found data array with ${usersData.length} items');
-          return (usersData as List)
+          print('Found array with ${usersData.length} items');
+          final users = usersData
               .map((item) => item as Map<String, dynamic>)
               .map(_parseUserData)
               .toList();
+          print('Successfully parsed ${users.length} users');
+          return users;
+        }
+
+        // Check if response indicates an error
+        if (response['success'] == false) {
+          throw Exception(response['message'] ?? 'Request gagal');
         }
       }
 
