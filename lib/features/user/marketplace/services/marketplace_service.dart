@@ -28,6 +28,16 @@ class MarketplaceService {
     try {
       final response = await apiClient.dio.get(endpoint);
       if (response.statusCode == 200) {
+        // Backend returns array directly for /vegetable/list
+        if (response.data is List) {
+          final products = (response.data as List)
+              .map((item) => ProductModel.fromJson(item))
+              .toList();
+          return GetProductsResponse(
+            products: products,
+            total: products.length,
+          );
+        }
         return GetProductsResponse.fromJson(response.data);
       } else {
         throw Exception('Failed to fetch products');
@@ -41,7 +51,10 @@ class MarketplaceService {
     try {
       final response = await apiClient.dio.get(endpoint);
       if (response.statusCode == 200) {
-        return ProductModel.fromJson(response.data['product'] ?? response.data);
+        // Backend returns vegetable data directly
+        return ProductModel.fromJson(
+          response.data['vegetable'] ?? response.data,
+        );
       } else {
         throw Exception('Failed to fetch product');
       }
@@ -57,11 +70,18 @@ class MarketplaceService {
     try {
       final response = await apiClient.dio.put(endpoint, data: data);
       if (response.statusCode == 200) {
-        return ProductModel.fromJson(response.data['product'] ?? response.data);
+        return ProductModel.fromJson(
+          response.data['vegetable'] ?? response.data,
+        );
       } else {
         throw Exception('Failed to update product');
       }
     } on DioException catch (e) {
+      if (e.response?.statusCode == 403) {
+        throw Exception(
+          e.response?.data['message'] ?? 'Anda tidak memiliki izin',
+        );
+      }
       throw Exception('Error updating product: ${e.message}');
     }
   }
@@ -79,7 +99,7 @@ class MarketplaceService {
           total: mockProducts.length,
         );
       },
-      apiCall: () => _fetchProductsFromApi('/marketplace/products'),
+      apiCall: () => _fetchProductsFromApi('/vegetable/list'),
     );
   }
 
@@ -93,7 +113,7 @@ class MarketplaceService {
           orElse: () => throw Exception('Produk tidak ditemukan'),
         );
       },
-      apiCall: () => _fetchProductFromApi('/marketplace/products/$id'),
+      apiCall: () => _fetchProductFromApi('/vegetable/get/$id'),
     );
   }
 
@@ -107,8 +127,7 @@ class MarketplaceService {
             .toList();
         return GetProductsResponse(products: filtered, total: filtered.length);
       },
-      apiCall: () =>
-          _fetchProductsFromApi('/marketplace/products/category/$category'),
+      apiCall: () => _fetchProductsFromApi('/vegetable/by-category/$category'),
     );
   }
 
@@ -127,7 +146,7 @@ class MarketplaceService {
           total: sortedProducts.length,
         );
       },
-      apiCall: () => _fetchProductsFromApi('/marketplace/admin/products'),
+      apiCall: () => _fetchProductsFromApi('/vegetable/admin/list'),
     );
   }
 
@@ -170,10 +189,20 @@ class MarketplaceService {
         queryParams['category'] = category;
 
       final response = await apiClient.dio.get(
-        '/marketplace/products/search',
+        '/vegetable/search',
         queryParameters: queryParams,
       );
       if (response.statusCode == 200) {
+        // Backend returns array directly
+        if (response.data is List) {
+          final products = (response.data as List)
+              .map((item) => ProductModel.fromJson(item))
+              .toList();
+          return GetProductsResponse(
+            products: products,
+            total: products.length,
+          );
+        }
         return GetProductsResponse.fromJson(response.data);
       } else {
         throw Exception('Search failed');
@@ -218,7 +247,7 @@ class MarketplaceService {
       apiCall: () async {
         try {
           final response = await apiClient.dio.post(
-            '/marketplace/products',
+            '/vegetable/add',
             data: {
               'name': name,
               'description': description,
@@ -229,12 +258,24 @@ class MarketplaceService {
           );
           if (response.statusCode == 201 || response.statusCode == 200) {
             return ProductModel.fromJson(
-              response.data['product'] ?? response.data,
+              response.data['vegetable'] ?? response.data,
             );
           } else {
             throw Exception('Failed to add product');
           }
         } on DioException catch (e) {
+          if (e.response?.statusCode == 409) {
+            throw Exception(
+              e.response?.data['message'] ??
+                  'Sayuran dengan nama tersebut sudah ada',
+            );
+          }
+          if (e.response?.statusCode == 403) {
+            throw Exception(
+              e.response?.data['message'] ??
+                  'Anda tidak memiliki izin untuk menambah sayuran',
+            );
+          }
           throw Exception('Error adding product: ${e.message}');
         }
       },
@@ -258,7 +299,7 @@ class MarketplaceService {
       apiCall: () async {
         try {
           final response = await apiClient.dio.put(
-            '/marketplace/products/${product.id}',
+            '/vegetable/update/${product.id}',
             data: {
               'name': product.name,
               'description': product.description,
@@ -270,12 +311,18 @@ class MarketplaceService {
           );
           if (response.statusCode == 200) {
             return ProductModel.fromJson(
-              response.data['product'] ?? response.data,
+              response.data['vegetable'] ?? response.data,
             );
           } else {
             throw Exception('Failed to update product');
           }
         } on DioException catch (e) {
+          if (e.response?.statusCode == 403) {
+            throw Exception(
+              e.response?.data['message'] ??
+                  'Anda tidak memiliki izin untuk mengupdate sayuran',
+            );
+          }
           throw Exception('Error updating product: ${e.message}');
         }
       },
@@ -291,15 +338,19 @@ class MarketplaceService {
       },
       apiCall: () async {
         try {
-          final response = await apiClient.dio.delete(
-            '/marketplace/products/$id',
-          );
+          final response = await apiClient.dio.delete('/vegetable/delete/$id');
           if (response.statusCode == 200 || response.statusCode == 204) {
             return;
           } else {
             throw Exception('Failed to delete product');
           }
         } on DioException catch (e) {
+          if (e.response?.statusCode == 403) {
+            throw Exception(
+              e.response?.data['message'] ??
+                  'Anda tidak memiliki izin untuk menghapus sayuran',
+            );
+          }
           throw Exception('Error deleting product: ${e.message}');
         }
       },
@@ -321,9 +372,8 @@ class MarketplaceService {
         }
         throw Exception('Produk tidak ditemukan saat update stock.');
       },
-      apiCall: () => _updateProductApi('/marketplace/products/$id/stock', {
-        'stock': newStock,
-      }),
+      apiCall: () =>
+          _updateProductApi('/vegetable/update-stock/$id', {'stock': newStock}),
     );
   }
 
@@ -345,7 +395,7 @@ class MarketplaceService {
         }
         throw Exception('Produk tidak ditemukan saat update status.');
       },
-      apiCall: () => _updateProductApi('/marketplace/products/$id/status', {
+      apiCall: () => _updateProductApi('/vegetable/update-status/$id', {
         'status': newStatus,
       }),
     );
