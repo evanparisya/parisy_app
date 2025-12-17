@@ -40,28 +40,27 @@ class UserManagementService {
       final token = await _getToken();
       final response = await apiClient.getWithToken('auth/all', token);
 
-      // Handle different response formats
-      List<dynamic> usersList;
-      
+      // Backend returns array directly
       if (response is List) {
-        // Backend returns array directly
-        usersList = response;
-      } else if (response is Map<String, dynamic>) {
-        // Check if response has 'data' field
-        if (response['data'] != null && response['data'] is List) {
-          usersList = response['data'] as List;
-        } else {
-          // If no 'data' field or it's not a list, throw error
-          throw Exception('Invalid response format: expected List or Map with data field');
-        }
-      } else {
-        throw Exception('Unexpected response type: ${response.runtimeType}');
+        return (response as List)
+            .map((item) => item as Map<String, dynamic>)
+            .map(_parseUserData)
+            .toList();
       }
 
-      return usersList
-          .map((item) => item as Map<String, dynamic>)
-          .map(_parseUserData)
-          .toList();
+      // Fallback for wrapped response (when response is a Map)
+      if (response is Map<String, dynamic>) {
+        final usersData = response['data'];
+        if (usersData is List) {
+          return (usersData as List)
+              .map((item) => item as Map<String, dynamic>)
+              .map(_parseUserData)
+              .toList();
+        }
+      }
+
+      // If we reach here, the response format is unexpected
+      throw Exception('Format respons tidak valid: ${response.runtimeType}');
     } catch (e) {
       throw Exception('Error mengambil data pengguna: $e');
     }
