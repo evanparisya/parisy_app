@@ -1,6 +1,8 @@
 // lib/features/admin/screens/admin_products_screen.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:parisy_app/core/constants/app_constants.dart';
 import 'package:parisy_app/core/widgets/common_widgets.dart';
 import 'package:parisy_app/features/user/marketplace/models/product_model.dart';
@@ -37,35 +39,16 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      // appBar: AppBar(
-      //   backgroundColor: AppColors.background,
-      //   elevation: 0,
-      //   iconTheme: IconThemeData(color: AppColors.primaryBlack),
-      //   title: Text(
-      //     'CRUD Barang Jual Beli',
-      //     style: TextStyle(
-      //       color: AppColors.primaryBlack,
-      //       fontWeight: FontWeight.bold,
-      //     ),
-      //   ),
-      // ),
       body: Column(
         children: [
-          // Search bar
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 labelText: 'Cari Barang',
-                hintText: 'Cari nama atau deskripsi',
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: AppColors.neutralDarkGray,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onChanged: (value) {
                 if (value.isNotEmpty) {
@@ -76,31 +59,24 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
               },
             ),
           ),
-
-          // Products list
           Expanded(
             child: Consumer<MarketplaceController>(
               builder: (context, controller, _) {
-                if (controller.state == MarketplaceState.loading &&
-                    controller.products.isEmpty) {
-                  return Center(child: CircularProgressIndicator());
+                if (controller.state == MarketplaceState.loading && controller.products.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
                 }
-
                 if (controller.products.isEmpty) {
-                  return Center(child: Text('Tidak ada barang jual beli'));
+                  return const Center(child: Text('Tidak ada barang tersedia'));
                 }
-
                 return ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: controller.products.length,
                   itemBuilder: (context, index) {
                     final product = controller.products[index];
                     return _ProductManagementCard(
                       product: product,
                       onEdit: () => _showProductDialog(context, product),
-                      onDelete: () =>
-                          _showDeleteDialog(context, product.id, product.name),
-                      isCru: false, // Menandakan ini adalah CRUD
+                      onDelete: () => _showDeleteDialog(context, product.id, product.name),
                     );
                   },
                 );
@@ -112,7 +88,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.primaryBlack,
         onPressed: () => _showProductDialog(context, null),
-        child: Icon(Icons.add, color: AppColors.neutralWhite),
+        child: const Icon(Icons.add, color: AppColors.neutralWhite),
       ),
     );
   }
@@ -120,7 +96,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   void _showProductDialog(BuildContext context, ProductModel? product) {
     showDialog(
       context: context,
-      builder: (context) => _ProductFormDialog(product: product, isCru: false),
+      builder: (context) => _ProductFormDialog(product: product),
     );
   }
 
@@ -128,20 +104,16 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Hapus Barang'),
+        title: const Text('Hapus Barang'),
         content: Text('Apakah Anda yakin ingin menghapus $name?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Batal'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              // Asumsi ada metode deleteProduct di MarketplaceController
               await context.read<MarketplaceController>().deleteProduct(id);
             },
-            child: Text('Hapus', style: TextStyle(color: AppColors.errorRed)),
+            child: const Text('Hapus', style: TextStyle(color: AppColors.errorRed)),
           ),
         ],
       ),
@@ -149,104 +121,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   }
 }
 
-// --- Helper Widgets (Disalin dari RT Products Screen) ---
-class _ProductManagementCard extends StatelessWidget {
-  final ProductModel product;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final bool isCru;
-
-  const _ProductManagementCard({
-    required this.product,
-    required this.onEdit,
-    required this.onDelete,
-    this.isCru = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 0,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: AppColors.neutralGray,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.fastfood, color: AppColors.neutralDarkGray),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryBlack,
-                    ),
-                  ),
-                  Text(
-                    'Rp ${product.price.toStringAsFixed(0)} | Stok: ${product.stock}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.neutralDarkGray,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Kategori: ${product.category}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.edit,
-                    color: AppColors.primaryBlack,
-                    size: 20,
-                  ),
-                  onPressed: onEdit,
-                ),
-                if (!isCru) // Jika ini CRUD (Admin), tampilkan delete
-                  IconButton(
-                    icon: Icon(
-                      Icons.delete,
-                      color: AppColors.errorRed,
-                      size: 20,
-                    ),
-                    onPressed: onDelete,
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _ProductFormDialog extends StatefulWidget {
   final ProductModel? product;
-  final bool isCru;
-  const _ProductFormDialog({this.product, this.isCru = false});
+  const _ProductFormDialog({this.product});
 
   @override
   State<_ProductFormDialog> createState() => _ProductFormDialogState();
@@ -258,24 +135,23 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   late TextEditingController _descController;
   late TextEditingController _priceController;
   late TextEditingController _stockController;
-  String? _selectedCategory;
-
-  final List<String> _categories = ['daun', 'akar', 'bunga', 'buah'];
+  XFile? _pickedImage;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.product?.name ?? '');
-    _descController = TextEditingController(
-      text: widget.product?.description ?? '',
-    );
-    _priceController = TextEditingController(
-      text: widget.product?.price.toString() ?? '',
-    );
-    _stockController = TextEditingController(
-      text: widget.product?.stock.toString() ?? '',
-    );
-    _selectedCategory = widget.product?.category;
+    _descController = TextEditingController(text: widget.product?.description ?? '');
+    _priceController = TextEditingController(text: widget.product?.price.toString() ?? '');
+    _stockController = TextEditingController(text: widget.product?.stock.toString() ?? '');
+  }
+
+  Future<void> _takePicture() async {
+    final img = await context.read<MarketplaceController>().pickImageFromCamera();
+    if (img != null) {
+      setState(() => _pickedImage = img);
+    }
   }
 
   @override
@@ -288,70 +164,107 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              InputField(
-                label: 'Nama',
-                hint: 'Nama Barang',
-                controller: _nameController,
+              GestureDetector(
+                onTap: _takePicture,
+                child: Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.primaryGreen.withOpacity(0.3)),
+                  ),
+                  child: _pickedImage != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(File(_pickedImage!.path), fit: BoxFit.cover),
+                        )
+                      : const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.camera_alt, size: 40, color: AppColors.primaryGreen),
+                            Text("Ambil Foto (AI Prediksi)", style: TextStyle(fontSize: 10)),
+                          ],
+                        ),
+                ),
               ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Deskripsi',
-                hint: 'Deskripsi Barang',
-                controller: _descController,
-                maxLines: 2,
-              ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Harga',
-                hint: 'Harga Jual',
-                controller: _priceController,
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Stok',
-                hint: 'Stok Tersedia',
-                controller: _stockController,
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'Kategori'),
-                initialValue: _selectedCategory,
-                items: _categories
-                    .map(
-                      (c) => DropdownMenuItem(
-                        value: c,
-                        child: Text(c.toUpperCase()),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) => setState(() => _selectedCategory = value),
-              ),
-              SizedBox(height: 12),
-              Text(
-                'Image URL/Upload diabaikan untuk demo ini',
-                style: TextStyle(fontSize: 10, color: AppColors.errorRed),
-              ),
+              const SizedBox(height: 16),
+              InputField(label: 'Nama', hint: 'Nama Barang', controller: _nameController),
+              const SizedBox(height: 12),
+              InputField(label: 'Deskripsi', hint: 'Deskripsi', controller: _descController, maxLines: 2),
+              const SizedBox(height: 12),
+              InputField(label: 'Harga', hint: 'Harga', controller: _priceController, keyboardType: TextInputType.number),
+              const SizedBox(height: 12),
+              InputField(label: 'Stok', hint: 'Stok', controller: _stockController, keyboardType: TextInputType.number),
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('Batal'),
-        ),
-        TextButton(
-          onPressed: () {
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+        PrimaryButton(
+          label: 'Simpan',
+          width: 100,
+          isLoading: _isLoading,
+          onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              // Logika save
-              Navigator.pop(context);
+              if (_pickedImage == null && widget.product == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Harap ambil foto produk!")),
+                );
+                return;
+              }
+              setState(() => _isLoading = true);
+              final success = await context.read<MarketplaceController>().addProductWithCamera(
+                name: _nameController.text,
+                description: _descController.text,
+                price: double.tryParse(_priceController.text) ?? 0.0,
+                stock: int.tryParse(_stockController.text) ?? 0,
+                image: _pickedImage!,
+              );
+              if (success && mounted) Navigator.pop(context);
+              setState(() => _isLoading = false);
             }
           },
-          child: Text('Simpan'),
         ),
       ],
+    );
+  }
+}
+
+class _ProductManagementCard extends StatelessWidget {
+  final ProductModel product;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _ProductManagementCard({
+    required this.product,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+          child: const Icon(Icons.fastfood),
+        ),
+        title: Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('Rp ${product.price.toStringAsFixed(0)} | Stok: ${product.stock}\nKategori: ${product.category}'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: onEdit),
+            IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: onDelete),
+          ],
+        ),
+      ),
     );
   }
 }

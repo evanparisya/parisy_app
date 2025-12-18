@@ -16,60 +16,67 @@ class MarketplaceController extends ChangeNotifier {
 
   MarketplaceController({required this.marketplaceService});
 
-  // Getters
+  // --- Getters ---
   MarketplaceState get state => _state;
   List<ProductModel> get products => _products;
   String? get selectedCategory => _selectedCategory;
   String? get errorMessage => _errorMessage;
-  // Kategori sesuai enum vegetables DBML: daun, akar, bunga, buah
   List<String> get categories => ['daun', 'akar', 'bunga', 'buah'];
 
-  // --- Helper Method ---
-  Future<T?> _executeWithState<T>(Future<T> Function() operation) async {
+  // --- Methods Load Data ---
+  Future<void> loadInitialData() async {
+    await loadProducts();
+  }
+
+  Future<void> loadProducts() async {
+    _state = MarketplaceState.loading;
+    notifyListeners();
     try {
-      _state = MarketplaceState.loading;
-      notifyListeners();
-
-      final result = await operation();
-
+      final response = await marketplaceService.getProducts();
+      _products = response.products;
       _state = MarketplaceState.loaded;
-      _errorMessage = null;
-      notifyListeners();
-      return result;
     } catch (e) {
       _state = MarketplaceState.error;
       _errorMessage = e.toString();
-      notifyListeners();
-      return null;
     }
+    notifyListeners();
   }
 
-  Future<bool> _executeMutation(
-    Future<ProductModel> Function() operation,
-    void Function(ProductModel) onSuccess,
-  ) async {
+  Future<void> loadAdminProducts() async {
+    _state = MarketplaceState.loading;
+    notifyListeners();
     try {
-      final result = await operation();
-      onSuccess(result);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  // --- Load Products ---
-  Future<void> loadProducts() async {
-    await _executeWithState(() async {
-      final response = await marketplaceService.getProducts();
+      final response = await marketplaceService.getAdminProducts();
       _products = response.products;
-    });
+      _state = MarketplaceState.loaded;
+    } catch (e) {
+      _state = MarketplaceState.error;
+      _errorMessage = e.toString();
+    }
+    notifyListeners();
   }
 
-  Future<void> loadInitialData() async {
-    await loadProducts();
+  Future<void> loadProductsByCategory(String category) async {
+    _selectedCategory = category;
+    _state = MarketplaceState.loading;
+    notifyListeners();
+    try {
+      final response = await marketplaceService.getProductsByCategory(category);
+      _products = response.products;
+      _state = MarketplaceState.loaded;
+    } catch (e) {
+      _state = MarketplaceState.error;
+    }
+    notifyListeners();
+  }
+
+  // --- Filter & Search ---
+  Future<void> filterByCategory(String? category) async {
+    if (category == null) {
+      await resetFilters();
+    } else {
+      await loadProductsByCategory(category);
+    }
   }
 
   Future<void> resetFilters() async {
@@ -77,75 +84,69 @@ class MarketplaceController extends ChangeNotifier {
     await loadProducts();
   }
 
-  // --- Get Product Detail ---
-  Future<ProductModel?> getProductDetail(int id) async {
-    return _executeWithState(() => marketplaceService.getProductDetail(id));
-  }
-
-  // --- Get Products by Category (via service) ---
-  Future<void> loadProductsByCategory(String category) async {
-    _selectedCategory = category;
-    await _executeWithState(() async {
-      final response = await marketplaceService.getProductsByCategory(category);
-      _products = response.products;
-    });
-  }
-
-  // --- Get Admin Products (All including unavailable) ---
-  Future<void> loadAdminProducts() async {
-    await _executeWithState(() async {
-      final response = await marketplaceService.getAdminProducts();
-      _products = response.products;
-    });
-  }
-
-  // --- Filter & Search Products ---
-  Future<void> filterByCategory(String? category) async {
-    _selectedCategory = category;
-
-    if (category == null) {
-      await loadProducts();
-    } else {
-      await loadProductsByCategory(category);
-    }
-  }
-
   Future<void> searchProducts(String query, {String? category}) async {
-    if (query.isEmpty && category == null) {
-      await loadProducts();
-      return;
-    }
-
-    await _executeWithState(() async {
+    _state = MarketplaceState.loading;
+    notifyListeners();
+    try {
       final response = await marketplaceService.searchProducts(
-        query,
-        category: category ?? _selectedCategory,
+        query, 
+        category: category ?? _selectedCategory
       );
       _products = response.products;
-    });
+      _state = MarketplaceState.loaded;
+    } catch (e) {
+      _state = MarketplaceState.error;
+    }
+    notifyListeners();
   }
 
-  // --- CRU/CRUD Logic (Digunakan oleh Admin/RT/RW screens) ---
-  Future<bool> addProduct(ProductModel product) async {
-    return _executeMutation(
-      () => marketplaceService.addProduct(
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        stock: product.stock,
-        category: product.category,
-      ),
-      (newProduct) => _products.insert(0, newProduct),
-    );
+  // --- Mutation Methods (Kamera & Prediksi) ---
+  Future<bool> addProductWithCamera({
+    required String name,
+    required String description,
+    required double price,
+    required int stock,
+    required XFile image,
+  }) async {
+    try {
+      _state = MarketplaceState.loading;
+      notifyListeners();
+      
+      // Mengirim ke service yang akan melakukan konversi base64
+      final newProduct = await marketplaceService.addProductWithImage(
+        name: name,
+        description: description,
+        price: price,
+        stock: stock,
+        imageFile: image,
+      );
+      
+      _products.insert(0, newProduct);
+      _state = MarketplaceState.loaded;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _state = MarketplaceState.error;
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 
-  Future<bool> updateProduct(ProductModel product) async {
-    return _executeMutation(() => marketplaceService.updateProduct(product), (
-      updatedProduct,
-    ) {
-      final index = _products.indexWhere((p) => p.id == updatedProduct.id);
-      if (index != -1) _products[index] = updatedProduct;
-    });
+  Future<bool> updateStock(int id, int newStock) async {
+    try {
+      final updatedProduct = await marketplaceService.updateStock(id, newStock);
+      final index = _products.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        _products[index] = updatedProduct;
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<void> deleteProduct(int id) async {
@@ -159,37 +160,8 @@ class MarketplaceController extends ChangeNotifier {
     }
   }
 
-  // --- Update Stock (Untuk Admin/Sekretaris) ---
-  Future<bool> updateStock(int id, int newStock) async {
-    return _executeMutation(
-      () => marketplaceService.updateStock(id, newStock),
-      (updatedProduct) {
-        final index = _products.indexWhere((p) => p.id == id);
-        if (index != -1) _products[index] = updatedProduct;
-      },
-    );
-  }
-
-  // --- Update Status (Untuk Admin/RT/RW) ---
-  Future<bool> updateStatus(int id, String newStatus) async {
-    return _executeMutation(
-      () => marketplaceService.updateStatus(id, newStatus),
-      (updatedProduct) {
-        final index = _products.indexWhere((p) => p.id == id);
-        if (index != -1) _products[index] = updatedProduct;
-      },
-    );
-  }
-
-  // --- Camera ---
   Future<XFile?> pickImageFromCamera() async {
-    try {
-      return await marketplaceService.pickImageFromCamera();
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-      return null;
-    }
+    return await marketplaceService.pickImageFromCamera();
   }
 
   void clearError() {
