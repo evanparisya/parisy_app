@@ -1,4 +1,5 @@
 // lib/features/user/marketplace/widgets/product_card.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:parisy_app/core/constants/app_constants.dart';
 import 'package:parisy_app/features/user/marketplace/models/product_model.dart';
@@ -19,7 +20,10 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Simulasi harga $XX.XX sesuai desain, konversi harga aslinya ke satuan 1000
-    final formattedPrice = NumberFormat.currency(locale: 'en_US', symbol: '\$ ').format(product.price / 10000); 
+    final formattedPrice = NumberFormat.currency(
+      locale: 'en_US',
+      symbol: '\$ ',
+    ).format(product.price / 10000);
 
     return GestureDetector(
       onTap: onTap,
@@ -47,17 +51,30 @@ class ProductCard extends StatelessWidget {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: AppColors.neutralGray,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(15),
+                      ),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(15),
+                      ),
                       child: product.imageUrl.isNotEmpty
-                          ? Image.network(
-                              product.imageUrl,
+                          ? Image.memory(
+                              base64Decode(product.imageUrl),
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Icon(Icons.fastfood, size: 50, color: AppColors.neutralDarkGray),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(
+                                    Icons.local_dining,
+                                    size: 50,
+                                    color: AppColors.neutralDarkGray,
+                                  ),
                             )
-                          : Icon(Icons.fastfood, size: 50, color: AppColors.neutralDarkGray),
+                          : Icon(
+                              Icons.local_dining,
+                              size: 50,
+                              color: AppColors.neutralDarkGray,
+                            ),
                     ),
                   ),
                   // Placeholder Discount Badge (Mirip desain)
@@ -70,7 +87,14 @@ class ProductCard extends StatelessWidget {
                         color: AppColors.primaryBlack,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text('-25%', style: TextStyle(color: AppColors.neutralWhite, fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        '-25%',
+                        style: TextStyle(
+                          color: AppColors.neutralWhite,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -89,14 +113,21 @@ class ProductCard extends StatelessWidget {
                       product.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryBlack),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryBlack,
+                      ),
                     ),
                     SizedBox(height: 4),
                     Text(
                       product.description,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.neutralDarkGray,
+                      ),
                     ),
                     Spacer(),
                     Row(
@@ -104,7 +135,11 @@ class ProductCard extends StatelessWidget {
                       children: [
                         Text(
                           formattedPrice,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryBlack),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryBlack,
+                          ),
                         ),
                         // Add to Cart Button (Mirip desain)
                         GestureDetector(
@@ -116,7 +151,11 @@ class ProductCard extends StatelessWidget {
                               color: AppColors.primaryGreen,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.add, color: AppColors.neutralWhite, size: 20),
+                            child: Icon(
+                              Icons.add,
+                              color: AppColors.neutralWhite,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ],
