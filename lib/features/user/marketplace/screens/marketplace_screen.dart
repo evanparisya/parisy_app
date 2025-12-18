@@ -116,12 +116,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             snap: false,
             backgroundColor: AppColors.background,
             elevation: 0,
-            expandedHeight: 220.0,
+            expandedHeight: 140.0,
             flexibleSpace: FlexibleSpaceBar(
               background: SafeArea(
                 child: Column(
                   children: [
-                    _buildHeader(context),
                     _buildSearchBar(context, controller),
                     _buildCategoryFilter(controller),
                   ],

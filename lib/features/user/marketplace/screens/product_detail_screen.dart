@@ -1,4 +1,5 @@
 // lib/features/user/marketplace/screens/product_detail_screen.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:parisy_app/core/constants/app_constants.dart';
@@ -20,7 +21,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final formattedPrice = NumberFormat.currency(locale: 'id', symbol: 'Rp ').format(widget.product.price);
+    final formattedPrice = NumberFormat.currency(
+      locale: 'id',
+      symbol: 'Rp ',
+    ).format(widget.product.price);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -30,7 +34,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         iconTheme: IconThemeData(color: AppColors.primaryBlack),
         title: Text(
           'Detail Produk',
-          style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.primaryBlack,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: Column(
@@ -41,30 +48,37 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Image
-                  Center(
-                    child: Container(
-                      height: 250,
-                      decoration: BoxDecoration(
-                        color: AppColors.neutralGray,
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
-                        child: widget.product.imageUrl.isNotEmpty
-                            ? Image.network(
-                                widget.product.imageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Icon(Icons.fastfood, size: 80, color: AppColors.neutralDarkGray),
-                              )
-                            : Icon(Icons.fastfood, size: 80, color: AppColors.neutralDarkGray),
+                  // Product Image - only show if image exists
+                  if (widget.product.imageUrl.isNotEmpty)
+                    Center(
+                      child: Container(
+                        height: 250,
+                        decoration: BoxDecoration(
+                          color: AppColors.neutralGray,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Image.memory(
+                            base64Decode(widget.product.imageUrl),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                SizedBox.shrink(),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 20),
+                  if (widget.product.imageUrl.isNotEmpty) SizedBox(height: 20),
 
                   // Name and Category
-                  Text(widget.product.name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
+                  Text(
+                    widget.product.name,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlack,
+                    ),
+                  ),
                   SizedBox(height: 8),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -72,7 +86,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       color: AppColors.primaryGreen.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(widget.product.category.toUpperCase(), style: TextStyle(fontSize: 12, color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      widget.product.category.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.primaryGreen,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   SizedBox(height: 15),
 
@@ -80,25 +101,67 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(formattedPrice, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-                      Text('Stok: ${widget.product.stock}', style: TextStyle(fontSize: 16, color: AppColors.neutralDarkGray)),
+                      Text(
+                        formattedPrice,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryBlack,
+                        ),
+                      ),
+                      Text(
+                        'Stok: ${widget.product.stock}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.neutralDarkGray,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 20),
 
                   // Description
-                  Text('Deskripsi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
+                  Text(
+                    'Deskripsi',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlack,
+                    ),
+                  ),
                   SizedBox(height: 8),
-                  Text(widget.product.description.isEmpty ? 'Tidak ada deskripsi.' : widget.product.description, style: TextStyle(fontSize: 16, color: AppColors.neutralDarkGray, height: 1.5)),
+                  Text(
+                    widget.product.description.isEmpty
+                        ? 'Tidak ada deskripsi.'
+                        : widget.product.description,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.neutralDarkGray,
+                      height: 1.5,
+                    ),
+                  ),
                   SizedBox(height: 40),
 
                   // Seller Info (Placeholder)
-                  Text('Penjual', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
+                  Text(
+                    'Penjual',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlack,
+                    ),
+                  ),
                   SizedBox(height: 8),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(backgroundColor: AppColors.neutralDarkGray, child: Icon(Icons.person, color: AppColors.neutralWhite)),
-                    title: Text(widget.product.createdByName ?? 'Admin/Penjual', style: TextStyle(fontWeight: FontWeight.w600)),
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.neutralDarkGray,
+                      child: Icon(Icons.person, color: AppColors.neutralWhite),
+                    ),
+                    title: Text(
+                      widget.product.createdByName ?? 'Admin/Penjual',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     subtitle: Text('ID: ${widget.product.createdBy}'),
                   ),
                 ],
@@ -117,21 +180,44 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       decoration: BoxDecoration(
         color: AppColors.neutralWhite,
-        boxShadow: [BoxShadow(color: AppColors.neutralDarkGray.withOpacity(0.1), blurRadius: 10, offset: Offset(0, -5))],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.neutralDarkGray.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, -5),
+          ),
+        ],
       ),
       child: Row(
         children: [
           // Quantity Selector
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.neutralDarkGray.withOpacity(0.3)),
+              border: Border.all(
+                color: AppColors.neutralDarkGray.withOpacity(0.3),
+              ),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
-                IconButton(icon: Icon(Icons.remove, size: 20), onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null),
-                Text('$_quantity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-                IconButton(icon: Icon(Icons.add, size: 20), onPressed: () => setState(() => _quantity++)),
+                IconButton(
+                  icon: Icon(Icons.remove, size: 20),
+                  onPressed: _quantity > 1
+                      ? () => setState(() => _quantity--)
+                      : null,
+                ),
+                Text(
+                  '$_quantity',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryBlack,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.add, size: 20),
+                  onPressed: () => setState(() => _quantity++),
+                ),
               ],
             ),
           ),
@@ -143,10 +229,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               backgroundColor: AppColors.primaryBlack,
               onPressed: () {
                 final cartController = context.read<CartController>();
-                cartController.addItem(productId: widget.product.id, name: widget.product.name, price: widget.product.price);
+                cartController.addItem(
+                  productId: widget.product.id,
+                  name: widget.product.name,
+                  price: widget.product.price,
+                );
                 cartController.updateQuantity(widget.product.id, _quantity);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${widget.product.name} (x$_quantity) ditambahkan!'), backgroundColor: AppColors.primaryGreen),
+                  SnackBar(
+                    content: Text(
+                      '${widget.product.name} (x$_quantity) ditambahkan!',
+                    ),
+                    backgroundColor: AppColors.primaryGreen,
+                  ),
                 );
               },
             ),

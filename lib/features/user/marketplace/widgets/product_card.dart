@@ -42,64 +42,58 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image and Discount Badge
-            Expanded(
-              flex: 3,
-              child: Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: AppColors.neutralGray,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(15),
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(15),
-                      ),
-                      child: product.imageUrl.isNotEmpty
-                          ? Image.memory(
-                              base64Decode(product.imageUrl),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(
-                                    Icons.local_dining,
-                                    size: 50,
-                                    color: AppColors.neutralDarkGray,
-                                  ),
-                            )
-                          : Icon(
-                              Icons.local_dining,
-                              size: 50,
-                              color: AppColors.neutralDarkGray,
-                            ),
-                    ),
-                  ),
-                  // Placeholder Discount Badge (Mirip desain)
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            // Image and Discount Badge - only show if image exists
+            if (product.imageUrl.isNotEmpty)
+              Expanded(
+                flex: 3,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryBlack,
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.neutralGray,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(15),
+                        ),
                       ),
-                      child: Text(
-                        '-25%',
-                        style: TextStyle(
-                          color: AppColors.neutralWhite,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(15),
+                        ),
+                        child: Image.memory(
+                          base64Decode(product.imageUrl),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              SizedBox.shrink(),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    // Placeholder Discount Badge (Mirip desain)
+                    Positioned(
+                      top: 10,
+                      left: 10,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBlack,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '-25%',
+                          style: TextStyle(
+                            color: AppColors.neutralWhite,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
             // Content
             Expanded(
               flex: 2,
