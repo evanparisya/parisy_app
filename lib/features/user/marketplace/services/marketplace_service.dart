@@ -31,8 +31,15 @@ class MarketplaceService {
 
   // --- Fetch Products ---
   Future<GetProductsResponse> getProducts() async {
-    final response = await apiClient.dio.get('/vegetable/list');
-    return GetProductsResponse.fromJson(response.data);
+    try {
+      print('🔵 Fetching products from /vegetable/list...');
+      final response = await apiClient.dio.get('/vegetable/list');
+      print('✅ Response received: ${response.data}');
+      return GetProductsResponse.fromJson(response.data);
+    } catch (e) {
+      print('❌ Error fetching products: $e');
+      rethrow;
+    }
   }
 
   Future<GetProductsResponse> getAdminProducts() async {

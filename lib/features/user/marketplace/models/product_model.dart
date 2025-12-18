@@ -143,12 +143,32 @@ class GetProductsResponse {
 
   GetProductsResponse({required this.products, required this.total});
 
-  factory GetProductsResponse.fromJson(Map<String, dynamic> json) {
+  factory GetProductsResponse.fromJson(dynamic json) {
+    // Handle berbagai format response dari backend
+    // Format 1: { "products": [...], "total": 10 }
+    // Format 2: { "vegetables": [...], "total": 10 }
+    // Format 3: [ ... ] (array langsung)
+
+    List<dynamic> productList = [];
+    int total = 0;
+
+    if (json is Map<String, dynamic>) {
+      if (json['products'] != null) {
+        productList = json['products'] as List;
+      } else if (json['vegetables'] != null) {
+        productList = json['vegetables'] as List;
+      }
+      total = json['total'] ?? productList.length;
+    } else if (json is List) {
+      productList = json;
+      total = productList.length;
+    }
+
     return GetProductsResponse(
       products: List<ProductModel>.from(
-        (json['products'] as List? ?? []).map((x) => ProductModel.fromJson(x)),
+        productList.map((x) => ProductModel.fromJson(x)),
       ),
-      total: json['total'] ?? 0,
+      total: total,
     );
   }
 }
