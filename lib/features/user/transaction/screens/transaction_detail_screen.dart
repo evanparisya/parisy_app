@@ -1,37 +1,40 @@
-// lib/features/user/orders/screens/order_detail_screen.dart
+// lib/features/user/transaction/screens/transaction_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:parisy_app/core/constants/app_constants.dart';
-import 'package:parisy_app/features/user/orders/controllers/order_controller.dart';
-import 'package:parisy_app/features/user/orders/models/order_model.dart';
+import 'package:parisy_app/core/widgets/common_widgets.dart';
+import 'package:parisy_app/features/user/transaction/controllers/transaction_controller.dart';
+import 'package:parisy_app/features/user/transaction/models/transaction_model.dart';
 import 'package:intl/intl.dart';
 
-class OrderDetailScreen extends StatefulWidget {
-  final OrderModel order;
-  const OrderDetailScreen({super.key, required this.order});
+class TransactionDetailScreen extends StatefulWidget {
+  final TransactionModel transaction;
+
+  const TransactionDetailScreen({super.key, required this.transaction});
 
   @override
-  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
+  State<TransactionDetailScreen> createState() =>
+      _TransactionDetailScreenState();
 }
 
-class _OrderDetailScreenState extends State<OrderDetailScreen> {
-  late OrderModel _order;
+class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
+  late TransactionModel _transaction;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _order = widget.order;
-    _loadOrderDetail();
+    _transaction = widget.transaction;
+    _loadTransactionDetail();
   }
 
-  Future<void> _loadOrderDetail() async {
+  Future<void> _loadTransactionDetail() async {
     setState(() => _isLoading = true);
     try {
-      final controller = context.read<OrderController>();
-      final detail = await controller.getOrderDetail(_order.id);
+      final controller = context.read<TransactionController>();
+      final detail = await controller.getTransactionDetail(_transaction.id);
       if (detail != null && mounted) {
-        setState(() => _order = detail);
+        setState(() => _transaction = detail);
       }
     } finally {
       if (mounted) {
@@ -56,27 +59,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
   }
 
-  String _getStatusDisplayText(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return 'Menunggu';
-      case 'paid':
-        return 'Dibayar';
-      case 'processing':
-        return 'Diproses';
-      case 'completed':
-        return 'Selesai';
-      case 'cancelled':
-        return 'Dibatalkan';
-      case 'failed':
-        return 'Gagal';
-      default:
-        return status;
-    }
-  }
-
   Future<void> _showUpdateStatusDialog() async {
-    String? selectedStatus = _order.statusTransaction;
+    String? selectedStatus = _transaction.transactionStatus;
     final statuses = [
       'pending',
       'paid',
@@ -121,7 +105,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       },
     );
 
-    if (result != null && result != _order.statusTransaction) {
+    if (result != null && result != _transaction.transactionStatus) {
       await _updateStatus(result);
     }
   }
@@ -129,9 +113,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Future<void> _updateStatus(String newStatus) async {
     setState(() => _isLoading = true);
     try {
-      final controller = context.read<OrderController>();
-      final success = await controller.updateOrderStatus(
-        orderId: _order.id,
+      final controller = context.read<TransactionController>();
+      final success = await controller.updateTransactionStatus(
+        transactionId: _transaction.id,
         transactionStatus: newStatus,
       );
 
@@ -143,7 +127,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ),
         );
         // Reload detail
-        await _loadOrderDetail();
+        await _loadTransactionDetail();
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -166,9 +150,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Hapus Pesanan'),
+          title: const Text('Hapus Transaksi'),
           content: const Text(
-            'Apakah Anda yakin ingin menghapus pesanan ini? Tindakan ini tidak dapat dibatalkan.',
+            'Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.',
           ),
           actions: [
             TextButton(
@@ -188,20 +172,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
 
     if (confirm == true) {
-      await _deleteOrder();
+      await _deleteTransaction();
     }
   }
 
-  Future<void> _deleteOrder() async {
+  Future<void> _deleteTransaction() async {
     setState(() => _isLoading = true);
     try {
-      final controller = context.read<OrderController>();
-      final success = await controller.deleteOrder(_order.id);
+      final controller = context.read<TransactionController>();
+      final success = await controller.deleteTransaction(_transaction.id);
 
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Pesanan berhasil dihapus'),
+            content: Text('Transaksi berhasil dihapus'),
             backgroundColor: AppColors.primaryGreen,
           ),
         );
@@ -209,7 +193,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(controller.errorMessage ?? 'Gagal menghapus pesanan'),
+            content: Text(
+              controller.errorMessage ?? 'Gagal menghapus transaksi',
+            ),
             backgroundColor: AppColors.errorRed,
           ),
         );
@@ -221,13 +207,33 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
   }
 
+  String _getStatusDisplayText(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'Menunggu';
+      case 'paid':
+        return 'Dibayar';
+      case 'processing':
+        return 'Diproses';
+      case 'completed':
+        return 'Selesai';
+      case 'cancelled':
+        return 'Dibatalkan';
+      case 'failed':
+        return 'Gagal';
+      default:
+        return status;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(_order.statusTransaction);
+    final statusColor = _getStatusColor(_transaction.transactionStatus);
     final formattedTotal = NumberFormat.currency(
       locale: 'id',
       symbol: 'Rp ',
-    ).format(_order.priceTotal);
+      decimalDigits: 0,
+    ).format(_transaction.totalPrice);
 
     final backgroundColor = Color.fromARGB(
       (255 * 0.05).round(),
@@ -236,8 +242,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       statusColor.blue,
     );
 
-    final isPending = _order.statusTransaction.toLowerCase() == 'pending';
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -245,14 +249,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.primaryBlack),
         title: Text(
-          'Detail Pesanan ${_order.code}',
+          'Detail Transaksi',
           style: const TextStyle(
             color: AppColors.primaryBlack,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
-          if (isPending)
+          if (_transaction.isPending)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
               onSelected: (value) {
@@ -293,7 +297,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: _loadOrderDetail,
+              onRefresh: _loadTransactionDetail,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(20),
@@ -326,9 +330,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                     ),
                                   ),
                                   Text(
-                                    _getStatusDisplayText(
-                                      _order.statusTransaction,
-                                    ).toUpperCase(),
+                                    _transaction.statusDisplayText
+                                        .toUpperCase(),
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: statusColor,
@@ -337,7 +340,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Kode: ${_order.code}',
+                                    'Kode: ${_transaction.code}',
                                     style: const TextStyle(fontSize: 12),
                                   ),
                                 ],
@@ -366,20 +369,32 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     ),
                     _DetailRow(
                       label: 'Metode Bayar',
-                      value: _order.statusPayment.toUpperCase(),
+                      value: _transaction.paymentMethod.toUpperCase(),
                     ),
                     _DetailRow(
-                      label: 'Tanggal Pesan',
-                      value: DateFormat(
-                        'dd MMM yyyy HH:mm',
-                      ).format(_order.createdAt),
+                      label: 'Tanggal Transaksi',
+                      value: _transaction.createdAt != null
+                          ? DateFormat(
+                              'dd MMM yyyy HH:mm',
+                            ).format(_transaction.createdAt!)
+                          : '-',
                     ),
-                    _DetailRow(label: 'Catatan', value: _order.notes ?? '-'),
+                    if (_transaction.updatedAt != null)
+                      _DetailRow(
+                        label: 'Terakhir Diperbarui',
+                        value: DateFormat(
+                          'dd MMM yyyy HH:mm',
+                        ).format(_transaction.updatedAt!),
+                      ),
+                    _DetailRow(
+                      label: 'Catatan',
+                      value: _transaction.notes ?? '-',
+                    ),
                     const SizedBox(height: 25),
 
                     // --- Detail Barang ---
                     const Text(
-                      'Detail Barang Dipesan',
+                      'Detail Barang',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -387,7 +402,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       ),
                     ),
                     const Divider(height: 20),
-                    if (_order.details.isEmpty)
+                    if (_transaction.items.isEmpty)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 20),
                         child: Center(
@@ -398,8 +413,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         ),
                       )
                     else
-                      ..._order.details
-                          .map((detail) => _ProductDetailTile(detail: detail))
+                      ..._transaction.items
+                          .map((item) => _TransactionItemTile(item: item))
                           .toList(),
                   ],
                 ),
@@ -415,6 +430,7 @@ class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
   final bool isBold;
+
   const _DetailRow({
     required this.label,
     required this.value,
@@ -427,19 +443,27 @@ class _DetailRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 14, color: AppColors.neutralDarkGray),
-          ),
-          Text(
-            value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              color: isBold
-                  ? AppColors.primaryBlack
-                  : AppColors.neutralDarkGray,
+              color: AppColors.neutralDarkGray,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                color: isBold
+                    ? AppColors.primaryBlack
+                    : AppColors.neutralDarkGray,
+              ),
             ),
           ),
         ],
@@ -448,9 +472,10 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-class _ProductDetailTile extends StatelessWidget {
-  final OrderDetailModel detail;
-  const _ProductDetailTile({required this.detail});
+class _TransactionItemTile extends StatelessWidget {
+  final TransactionDetailModel item;
+
+  const _TransactionItemTile({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -458,41 +483,48 @@ class _ProductDetailTile extends StatelessWidget {
       locale: 'id',
       symbol: 'Rp ',
       decimalDigits: 0,
-    ).format(detail.subtotal);
+    ).format(item.subtotal);
+
+    final formattedUnitPrice = NumberFormat.currency(
+      locale: 'id',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    ).format(item.unitPrice);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 45,
+            height: 45,
             decoration: BoxDecoration(
               color: AppColors.neutralGray,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              Icons.fastfood,
-              size: 20,
-              color: AppColors.neutralDarkGray,
+            child: const Icon(
+              Icons.eco,
+              size: 22,
+              color: AppColors.primaryGreen,
             ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  detail.vegetableName,
-                  style: TextStyle(
+                  'Produk #${item.vegetableId}',
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryBlack,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  '${detail.quantity} x Rp${detail.priceUnit.toStringAsFixed(0)}',
-                  style: TextStyle(
+                  '${item.quantity} x $formattedUnitPrice',
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.neutralDarkGray,
                   ),
@@ -502,7 +534,7 @@ class _ProductDetailTile extends StatelessWidget {
           ),
           Text(
             formattedPrice,
-            style: TextStyle(
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
               color: AppColors.primaryGreen,
             ),
