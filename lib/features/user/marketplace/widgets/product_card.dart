@@ -19,11 +19,12 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Simulasi harga $XX.XX sesuai desain, konversi harga aslinya ke satuan 1000
+    // Tampilkan harga sesuai data dari model (sama seperti DB)
     final formattedPrice = NumberFormat.currency(
-      locale: 'en_US',
-      symbol: '\$ ',
-    ).format(product.price / 10000);
+      locale: 'id',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    ).format(product.price);
 
     return GestureDetector(
       onTap: onTap,
@@ -62,76 +63,62 @@ class ProductCard extends StatelessWidget {
                       child: _buildProductImage(),
                     ),
                   ),
-                  // Placeholder Discount Badge (Mirip desain)
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryBlack,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '-25%',
-                        style: TextStyle(
-                          color: AppColors.neutralWhite,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Discount badge intentionally removed — price comes from DB
                 ],
               ),
             ),
-            // Content
+            // Content - gunakan padding lebih kecil dan hindari Spacer agar tidak overflow
             Expanded(
               flex: 2,
               child: Padding(
-                // PERBAIKAN OVERFLOW: Mengurangi padding vertikal dari 12 ke 8
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // Nama produk
                     Text(
                       product.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primaryBlack,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    // Deskripsi produk
                     Text(
                       product.description,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: AppColors.neutralDarkGray,
                       ),
                     ),
-                    Spacer(),
+                    // Harga dan tombol cart
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          formattedPrice,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryBlack,
+                        Expanded(
+                          child: Text(
+                            formattedPrice,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryBlack,
+                            ),
                           ),
                         ),
-                        // Add to Cart Button (Mirip desain)
+                        // Add to Cart Button
                         GestureDetector(
                           onTap: onAddToCart,
                           child: Container(
-                            width: 30,
-                            height: 30,
+                            width: 28,
+                            height: 28,
                             decoration: BoxDecoration(
                               color: AppColors.primaryGreen,
                               borderRadius: BorderRadius.circular(8),
@@ -139,7 +126,7 @@ class ProductCard extends StatelessWidget {
                             child: Icon(
                               Icons.add,
                               color: AppColors.neutralWhite,
-                              size: 20,
+                              size: 18,
                             ),
                           ),
                         ),

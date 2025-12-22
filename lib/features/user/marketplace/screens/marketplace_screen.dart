@@ -46,40 +46,37 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   // Perbaikan 5: Menambahkan _buildCategoryFilter sebagai metode internal
   Widget _buildCategoryFilter(MarketplaceController controller) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: SizedBox(
-        height: 80,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          children: [
-            // All Category Button
-            _CategoryItem(
-              label: 'All',
-              icon: Icons.all_inclusive,
-              isSelected: controller.selectedCategory == null,
-              onTap: controller.resetFilters,
-            ),
-            SizedBox(width: 10),
-            // Category items (Fruits, Drinks, Snack, Food -> diganti dengan DBML categories)
-            ...controller.categories
-                .map(
-                  (category) => Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: _CategoryItem(
-                      label:
-                          category.substring(0, 1).toUpperCase() +
-                          category.substring(1),
-                      icon: _getCategoryIcon(category),
-                      isSelected: controller.selectedCategory == category,
-                      onTap: () => controller.filterByCategory(category),
-                    ),
+    return SizedBox(
+      height: 70,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          // All Category Button
+          _CategoryItem(
+            label: 'All',
+            icon: Icons.all_inclusive,
+            isSelected: controller.selectedCategory == null,
+            onTap: controller.resetFilters,
+          ),
+          SizedBox(width: 10),
+          // Category items
+          ...controller.categories
+              .map(
+                (category) => Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: _CategoryItem(
+                    label:
+                        category.substring(0, 1).toUpperCase() +
+                        category.substring(1),
+                    icon: _getCategoryIcon(category),
+                    isSelected: controller.selectedCategory == category,
+                    onTap: () => controller.filterByCategory(category),
                   ),
-                )
-                .toList(),
-          ],
-        ),
+                ),
+              )
+              .toList(),
+        ],
       ),
     );
   }
@@ -106,88 +103,70 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          SliverAppBar(
-            // AppBar disesuaikan agar cocok dengan desain Screen 2
-            floating: true,
-            pinned: true,
-            snap: false,
-            backgroundColor: AppColors.background,
-            elevation: 0,
-            expandedHeight: 140.0,
-            flexibleSpace: FlexibleSpaceBar(
-              background: SafeArea(
-                child: Column(
-                  children: [
-                    _buildSearchBar(context, controller),
-                    _buildCategoryFilter(controller),
-                  ],
-                ),
-              ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header tetap di tempat (tidak ikut scroll)
+            _buildSearchBar(context, controller),
+            _buildCategoryFilter(controller),
+            // Konten scrollable
+            Expanded(child: _buildBody(controller)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(MarketplaceController controller) {
+    if (controller.state == MarketplaceState.loading &&
+        controller.products.isEmpty) {
+      return Center(child: CircularProgressIndicator());
+    } else if (controller.state == MarketplaceState.error) {
+      return common.ErrorWidget(
+        message: controller.errorMessage ?? 'Gagal memuat.',
+        onRetry: controller.loadInitialData,
+      );
+    } else if (controller.products.isEmpty) {
+      return common.EmptyStateWidget(
+        message: 'Tidak ada produk ditemukan.',
+      );
+    }
+
+    return GridView.builder(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 15,
+        mainAxisSpacing: 15,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: controller.products.length,
+      itemBuilder: (context, index) {
+        final product = controller.products[index];
+        return ProductCard(
+          product: product,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProductDetailScreen(product: product),
             ),
           ),
-
-          if (controller.state == MarketplaceState.loading &&
-              controller.products.isEmpty)
-            SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (controller.state == MarketplaceState.error)
-            SliverFillRemaining(
-              child: common.ErrorWidget(
-                message: controller.errorMessage ?? 'Gagal memuat.',
-                onRetry: controller.loadInitialData,
+          onAddToCart: () {
+            if (!mounted) return;
+            context.read<CartController>().addItem(
+              productId: product.id,
+              name: product.name,
+              price: product.price,
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${product.name} ditambahkan!'),
+                backgroundColor: AppColors.primaryGreen,
               ),
-            )
-          else if (controller.products.isEmpty)
-            SliverFillRemaining(
-              child: common.EmptyStateWidget(
-                message: 'Tidak ada produk ditemukan.',
-              ),
-            )
-          else
-            SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: 0.75,
-                ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final product = controller.products[index];
-                  return ProductCard(
-                    product: product,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProductDetailScreen(product: product),
-                      ),
-                    ),
-                    onAddToCart: () {
-                      if (!mounted) return;
-                      context.read<CartController>().addItem(
-                        productId: product.id,
-                        name: product.name,
-                        price: product.price,
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${product.name} ditambahkan!'),
-                          backgroundColor: AppColors.primaryGreen,
-                        ),
-                      );
-                    },
-                  );
-                }, childCount: controller.products.length),
-              ),
-            ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
