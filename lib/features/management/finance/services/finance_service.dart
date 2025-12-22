@@ -29,6 +29,7 @@ class FinanceService {
 
   // --- Get Financial Summary ---
   // GET /finance/summary
+  // Returns: total_income, total_pending, total_cancelled, counts
   Future<FinancialReportModel> getFinancialSummary() async {
     try {
       debugPrint('🔵 Fetching financial summary...');
@@ -55,19 +56,37 @@ class FinanceService {
     }
   }
 
-  // --- Get Cash Flow History ---
+  // --- Get Transaction History (Finance) ---
   // GET /finance/history
-  Future<List<CashFlowEntry>> getCashFlowHistory() async {
+  // Query params: status (pending/completed/cancelled), start_date, end_date
+  Future<List<CashFlowEntry>> getCashFlowHistory({
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
-      debugPrint('🔵 Fetching cash flow history...');
+      debugPrint('🔵 Fetching finance history...');
       final options = await _getAuthOptions();
+
+      // Build query parameters
+      final Map<String, dynamic> queryParams = {};
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+      if (startDate != null) {
+        queryParams['start_date'] = startDate.toIso8601String().split('T')[0];
+      }
+      if (endDate != null) {
+        queryParams['end_date'] = endDate.toIso8601String().split('T')[0];
+      }
 
       final response = await apiClient.dio.get(
         '/finance/history',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
         options: options,
       );
 
-      debugPrint('✅ Cash flow history received: ${response.data}');
+      debugPrint('✅ Finance history received: ${response.data}');
 
       if (response.data is List) {
         return (response.data as List)
@@ -75,131 +94,37 @@ class FinanceService {
             .toList();
       }
 
-      if (response.data is Map && response.data['history'] is List) {
-        return (response.data['history'] as List)
-            .map((json) => CashFlowEntry.fromJson(json))
-            .toList();
-      }
-
       return [];
     } on DioException catch (e) {
-      debugPrint('❌ DioException fetching cash flow: ${e.message}');
+      debugPrint('❌ DioException fetching history: ${e.message}');
       if (e.response != null) {
         final message =
-            e.response?.data['message'] ?? 'Gagal mengambil riwayat arus kas';
+            e.response?.data['message'] ?? 'Gagal mengambil riwayat transaksi';
         throw Exception(message);
       }
       throw Exception('Tidak dapat terhubung ke server');
     } catch (e) {
-      debugPrint('❌ Error fetching cash flow history: $e');
+      debugPrint('❌ Error fetching finance history: $e');
       rethrow;
     }
   }
 
-  // --- Add/Create Cash Flow Entry ---
-  // POST /finance/create
+  // --- Backward compatible methods (no longer needed for backend) ---
+  // These methods are kept for UI compatibility but will throw not implemented
+
   Future<bool> createCashFlow(CashFlowEntry entry) async {
-    try {
-      debugPrint('🔵 Creating cash flow entry...');
-      final options = await _getAuthOptions();
-
-      final response = await apiClient.dio.post(
-        '/finance/create',
-        data: {
-          'description': entry.description,
-          'amount': entry.amount,
-          'type': entry.type,
-          'date': entry.date.toIso8601String(),
-          'source_or_destination': entry.sourceOrDestination,
-        },
-        options: options,
-      );
-
-      debugPrint('✅ Cash flow created: ${response.data}');
-      return response.statusCode == 201 || response.statusCode == 200;
-    } on DioException catch (e) {
-      debugPrint('❌ DioException creating cash flow: ${e.message}');
-      if (e.response != null) {
-        final message =
-            e.response?.data['message'] ?? 'Gagal menambahkan arus kas';
-        throw Exception(message);
-      }
-      throw Exception('Tidak dapat terhubung ke server');
-    } catch (e) {
-      debugPrint('❌ Error creating cash flow: $e');
-      rethrow;
-    }
+    throw UnimplementedError('Backend tidak mendukung create cash flow manual');
   }
 
-  // --- Update Cash Flow Entry ---
-  // POST /finance/update/[id]
   Future<bool> updateCashFlow(CashFlowEntry entry) async {
-    try {
-      debugPrint('🔵 Updating cash flow entry ${entry.id}...');
-      final options = await _getAuthOptions();
-
-      final response = await apiClient.dio.post(
-        '/finance/update/${entry.id}',
-        data: {
-          'description': entry.description,
-          'amount': entry.amount,
-          'type': entry.type,
-          'date': entry.date.toIso8601String(),
-          'source_or_destination': entry.sourceOrDestination,
-        },
-        options: options,
-      );
-
-      debugPrint('✅ Cash flow updated: ${response.data}');
-      return response.statusCode == 200;
-    } on DioException catch (e) {
-      debugPrint('❌ DioException updating cash flow: ${e.message}');
-      if (e.response != null) {
-        final message =
-            e.response?.data['message'] ?? 'Gagal memperbarui arus kas';
-        throw Exception(message);
-      }
-      throw Exception('Tidak dapat terhubung ke server');
-    } catch (e) {
-      debugPrint('❌ Error updating cash flow: $e');
-      rethrow;
-    }
+    throw UnimplementedError('Backend tidak mendukung update cash flow manual');
   }
 
-  // --- Delete Cash Flow Entry ---
-  // DELETE /finance/delete/[id]
   Future<bool> deleteCashFlow(int id) async {
-    try {
-      debugPrint('🔵 Deleting cash flow entry $id...');
-      final options = await _getAuthOptions();
-
-      final response = await apiClient.dio.delete(
-        '/finance/delete/$id',
-        options: options,
-      );
-
-      debugPrint('✅ Cash flow deleted: ${response.data}');
-      return response.statusCode == 200;
-    } on DioException catch (e) {
-      debugPrint('❌ DioException deleting cash flow: ${e.message}');
-      if (e.response != null) {
-        final message =
-            e.response?.data['message'] ?? 'Gagal menghapus arus kas';
-        throw Exception(message);
-      }
-      throw Exception('Tidak dapat terhubung ke server');
-    } catch (e) {
-      debugPrint('❌ Error deleting cash flow: $e');
-      rethrow;
-    }
+    throw UnimplementedError('Backend tidak mendukung delete cash flow manual');
   }
 
-  // --- Manage Cash Flow (Backward compatible) ---
   Future<bool> manageCashFlow(CashFlowEntry entry) async {
-    if (entry.id == 0) {
-      return createCashFlow(entry);
-    } else {
-      return updateCashFlow(entry);
-    }
+    throw UnimplementedError('Backend tidak mendukung manage cash flow manual');
   }
 }

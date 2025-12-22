@@ -16,6 +16,8 @@ class AdminFinanceScreen extends StatefulWidget {
 }
 
 class _AdminFinanceScreenState extends State<AdminFinanceScreen> {
+  String? _selectedStatus;
+
   @override
   void initState() {
     super.initState();
@@ -28,22 +30,11 @@ class _AdminFinanceScreenState extends State<AdminFinanceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      // appBar: AppBar(
-      //   backgroundColor: AppColors.background,
-      //   elevation: 0,
-      //   iconTheme: IconThemeData(color: AppColors.primaryBlack),
-      //   title: Text('Kelola Uang & History Keuangan', style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold)),
-      //   actions: [
-      //     IconButton(
-      //       icon: Icon(Icons.add, color: AppColors.primaryBlack),
-      //       onPressed: () => _showCashFlowFormDialog(context, null),
-      //     ),
-      //   ],
-      // ),
       body: Consumer<FinanceController>(
         builder: (context, controller, child) {
-          if (controller.state == FinanceState.loading && controller.summary == null) {
-            return Center(child: CircularProgressIndicator());
+          if (controller.state == FinanceState.loading &&
+              controller.summary == null) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           final summary = controller.summary;
@@ -52,25 +43,73 @@ class _AdminFinanceScreenState extends State<AdminFinanceScreen> {
           return RefreshIndicator(
             onRefresh: controller.loadFinanceData,
             child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(16),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (summary != null)
-                    _FinancialSummaryCard(summary: summary),
-                  SizedBox(height: 24),
+                  if (summary != null) _FinancialSummaryCard(summary: summary),
+                  const SizedBox(height: 24),
 
-                  Text('History Arus Kas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
-                  SizedBox(height: 12),
-                  
-                  if (controller.state == FinanceState.loading && summary != null)
-                    Center(child: LinearProgressIndicator(color: AppColors.primaryGreen)),
+                  // Filter chips
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _FilterChip(
+                          label: 'Semua',
+                          selected: _selectedStatus == null,
+                          onSelected: () => _filterByStatus(context, null),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: 'Selesai',
+                          selected: _selectedStatus == 'completed',
+                          onSelected: () =>
+                              _filterByStatus(context, 'completed'),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: 'Pending',
+                          selected: _selectedStatus == 'pending',
+                          onSelected: () => _filterByStatus(context, 'pending'),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: 'Dibatalkan',
+                          selected: _selectedStatus == 'cancelled',
+                          onSelected: () =>
+                              _filterByStatus(context, 'cancelled'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Text(
+                    'Riwayat Transaksi',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlack,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  if (controller.state == FinanceState.loading &&
+                      summary != null)
+                    const Center(
+                      child: LinearProgressIndicator(
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
 
                   if (history.isEmpty)
-                    EmptyStateWidget(message: 'Belum ada riwayat arus kas.'),
+                    const EmptyStateWidget(
+                      message: 'Belum ada riwayat transaksi.',
+                    ),
 
-                  ...history.map((entry) => _CashFlowItemCard(entry: entry)),
+                  ...history.map((entry) => _TransactionItemCard(entry: entry)),
                 ],
               ),
             ),
@@ -79,35 +118,111 @@ class _AdminFinanceScreenState extends State<AdminFinanceScreen> {
       ),
     );
   }
-  
-  void _showCashFlowFormDialog(BuildContext context, CashFlowEntry? entry) {
-    showDialog(
-      context: context,
-      builder: (context) => _CashFlowFormDialog(entry: entry),
+
+  void _filterByStatus(BuildContext context, String? status) {
+    setState(() => _selectedStatus = status);
+    context.read<FinanceController>().loadHistoryWithFilters(status: status);
+  }
+}
+
+// --- Helper Widgets ---
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onSelected,
+      child: Chip(
+        label: Text(label),
+        backgroundColor: selected ? AppColors.primaryGreen : Colors.grey[200],
+        labelStyle: TextStyle(
+          color: selected ? Colors.white : AppColors.primaryBlack,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 }
 
-// --- Helper Widgets (Disalin dari Bendahara Finance Screen) ---
 class _SummaryBox extends StatelessWidget {
   final String title;
   final double value;
   final Color color;
-  const _SummaryBox({required this.title, required this.value, required this.color});
+  final int? count;
+
+  const _SummaryBox({
+    required this.title,
+    required this.value,
+    required this.color,
+    this.count,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
-          SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.neutralDarkGray,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (count != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
           Text(
-            NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(value),
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+            NumberFormat.currency(
+              locale: 'id',
+              symbol: 'Rp ',
+              decimalDigits: 0,
+            ).format(value),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -125,22 +240,80 @@ class _FinancialSummaryCard extends StatelessWidget {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saldo Bersih', style: TextStyle(fontSize: 14, color: AppColors.neutralDarkGray)),
-            SizedBox(height: 4),
-            Text(
-              NumberFormat.currency(locale: 'id', symbol: 'Rp ').format(summary.netBalance),
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Total Pendapatan',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.neutralDarkGray,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${summary.totalTransactions} Transaksi',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 4),
+            Text(
+              NumberFormat.currency(
+                locale: 'id',
+                symbol: 'Rp ',
+              ).format(summary.totalIncome),
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryGreen,
+              ),
+            ),
+            const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _SummaryBox(title: 'Pemasukan', value: summary.totalIncome, color: AppColors.primaryGreen)),
-                SizedBox(width: 16),
-                Expanded(child: _SummaryBox(title: 'Pengeluaran', value: summary.totalExpense, color: AppColors.errorRed)),
+                Expanded(
+                  child: _SummaryBox(
+                    title: 'Selesai',
+                    value: summary.totalIncome,
+                    color: AppColors.primaryGreen,
+                    count: summary.completedCount,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _SummaryBox(
+                    title: 'Pending',
+                    value: summary.totalPending,
+                    color: AppColors.accentYellow,
+                    count: summary.pendingCount,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _SummaryBox(
+                    title: 'Batal',
+                    value: summary.totalCancelled,
+                    color: AppColors.errorRed,
+                    count: summary.cancelledCount,
+                  ),
+                ),
               ],
             ),
           ],
@@ -150,112 +323,119 @@ class _FinancialSummaryCard extends StatelessWidget {
   }
 }
 
-class _CashFlowItemCard extends StatelessWidget {
+class _TransactionItemCard extends StatelessWidget {
   final CashFlowEntry entry;
-  const _CashFlowItemCard({required this.entry});
+  const _TransactionItemCard({required this.entry});
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'completed':
+        return AppColors.primaryGreen;
+      case 'pending':
+        return AppColors.accentYellow;
+      case 'cancelled':
+        return AppColors.errorRed;
+      default:
+        return AppColors.neutralDarkGray;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'completed':
+        return 'Selesai';
+      case 'pending':
+        return 'Pending';
+      case 'cancelled':
+        return 'Dibatalkan';
+      default:
+        return status;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status) {
+      case 'completed':
+        return Icons.check_circle;
+      case 'pending':
+        return Icons.access_time;
+      case 'cancelled':
+        return Icons.cancel;
+      default:
+        return Icons.help;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isIncome = entry.type == 'IN';
-    final color = isIncome ? AppColors.primaryGreen : AppColors.errorRed;
+    final statusColor = _getStatusColor(entry.status);
 
     return Card(
-      margin: EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.neutralGray)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.neutralGray),
+      ),
       child: ListTile(
-        contentPadding: EdgeInsets.all(16),
+        contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.1),
-          child: Icon(isIncome ? Icons.add : Icons.remove, color: color),
+          backgroundColor: statusColor.withOpacity(0.1),
+          child: Icon(_getStatusIcon(entry.status), color: statusColor),
         ),
-        title: Text(entry.description, style: TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(DateFormat('dd MMM yyyy').format(entry.date)),
+        title: Text(
+          entry.code,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(DateFormat('dd MMM yyyy, HH:mm').format(entry.createdAt)),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                _getStatusText(entry.status),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: statusColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
         trailing: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              '${isIncome ? '+' : '-'} ${NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(entry.amount)}',
-              style: TextStyle(color: color, fontWeight: FontWeight.bold),
+              NumberFormat.currency(
+                locale: 'id',
+                symbol: 'Rp ',
+                decimalDigits: 0,
+              ).format(entry.amount),
+              style: TextStyle(
+                color: entry.status == 'completed'
+                    ? AppColors.primaryGreen
+                    : statusColor,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            Text(entry.sourceOrDestination, style: TextStyle(fontSize: 10, color: AppColors.neutralDarkGray)),
+            Text(
+              entry.paymentMethod.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.neutralDarkGray,
+              ),
+            ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _CashFlowFormDialog extends StatefulWidget {
-  final CashFlowEntry? entry;
-  const _CashFlowFormDialog({this.entry});
-
-  @override
-  State<_CashFlowFormDialog> createState() => _CashFlowFormDialogState();
-}
-
-class _CashFlowFormDialogState extends State<_CashFlowFormDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _descController;
-  late TextEditingController _amountController;
-  late TextEditingController _sourceController;
-  String? _selectedType;
-
-  @override
-  void initState() {
-    super.initState();
-    _descController = TextEditingController(text: widget.entry?.description ?? '');
-    _amountController = TextEditingController(text: widget.entry?.amount.toString() ?? '');
-    _sourceController = TextEditingController(text: widget.entry?.sourceOrDestination ?? '');
-    _selectedType = widget.entry?.type ?? 'IN';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isNew = widget.entry == null;
-    return AlertDialog(
-      title: Text('${isNew ? 'Tambah' : 'Edit'} Arus Kas'),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'Tipe'),
-                initialValue: _selectedType,
-                items: ['IN', 'OUT'].map((t) => DropdownMenuItem(value: t, child: Text(t == 'IN' ? 'Pemasukan' : 'Pengeluaran'))).toList(),
-                onChanged: (value) => setState(() => _selectedType = value),
-              ),
-              SizedBox(height: 12),
-              InputField(label: 'Deskripsi', hint: 'Misal: Penjualan sayur', controller: _descController),
-              SizedBox(height: 12),
-              InputField(label: 'Jumlah (Rp)', hint: 'Jumlah uang', controller: _amountController, keyboardType: TextInputType.number),
-              SizedBox(height: 12),
-              InputField(label: 'Sumber/Tujuan', hint: 'Misal: Marketplace / Kas Umum', controller: _sourceController),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text('Batal')),
-        TextButton(onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            final entry = CashFlowEntry(
-              id: widget.entry?.id ?? 0,
-              description: _descController.text,
-              amount: double.tryParse(_amountController.text) ?? 0.0,
-              type: _selectedType!,
-              date: widget.entry?.date ?? DateTime.now(),
-              sourceOrDestination: _sourceController.text,
-            );
-
-            context.read<FinanceController>().saveCashFlow(entry);
-            Navigator.pop(context);
-          }
-        }, child: Text('Simpan')),
-      ],
     );
   }
 }

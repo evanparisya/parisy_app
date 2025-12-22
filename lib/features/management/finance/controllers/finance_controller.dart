@@ -14,6 +14,11 @@ class FinanceController extends ChangeNotifier {
   FinancialReportModel? _summary;
   List<CashFlowEntry> _history = [];
 
+  // Filter state
+  String? _statusFilter;
+  DateTime? _startDateFilter;
+  DateTime? _endDateFilter;
+
   FinanceController({required this.service});
 
   FinanceState get state => _state;
@@ -21,21 +26,35 @@ class FinanceController extends ChangeNotifier {
   FinancialReportModel? get summary => _summary;
   List<CashFlowEntry> get history => _history;
 
-  /// Get income entries
+  // Filter getters
+  String? get statusFilter => _statusFilter;
+  DateTime? get startDateFilter => _startDateFilter;
+  DateTime? get endDateFilter => _endDateFilter;
+
+  /// Get completed transactions (income)
   List<CashFlowEntry> get incomeEntries =>
-      _history.where((e) => e.type == 'IN').toList();
+      _history.where((e) => e.status == 'completed').toList();
 
-  /// Get expense entries
-  List<CashFlowEntry> get expenseEntries =>
-      _history.where((e) => e.type == 'OUT').toList();
+  /// Get cancelled transactions
+  List<CashFlowEntry> get cancelledEntries =>
+      _history.where((e) => e.status == 'cancelled').toList();
 
+  /// Get pending transactions
+  List<CashFlowEntry> get pendingEntries =>
+      _history.where((e) => e.status == 'pending').toList();
+
+  /// Load finance data (summary and history)
   Future<void> loadFinanceData() async {
     try {
       _state = FinanceState.loading;
       notifyListeners();
 
       _summary = await service.getFinancialSummary();
-      _history = await service.getCashFlowHistory();
+      _history = await service.getCashFlowHistory(
+        status: _statusFilter,
+        startDate: _startDateFilter,
+        endDate: _endDateFilter,
+      );
 
       _state = FinanceState.loaded;
       _errorMessage = null;
@@ -47,95 +66,42 @@ class FinanceController extends ChangeNotifier {
     }
   }
 
-  /// Save (create or update) cash flow entry
-  Future<bool> saveCashFlow(CashFlowEntry entry) async {
+  /// Load history with filters
+  Future<void> loadHistoryWithFilters({
+    String? status,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    _statusFilter = status;
+    _startDateFilter = startDate;
+    _endDateFilter = endDate;
+
     try {
       _state = FinanceState.loading;
       notifyListeners();
 
-      final success = await service.manageCashFlow(entry);
-      if (success) {
-        await loadFinanceData();
-        return true;
-      }
-      return false;
+      _history = await service.getCashFlowHistory(
+        status: status,
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+      _state = FinanceState.loaded;
+      _errorMessage = null;
     } catch (e) {
       _state = FinanceState.error;
       _errorMessage = _parseError(e);
+    } finally {
       notifyListeners();
-      return false;
     }
   }
 
-  /// Create new cash flow entry
-  Future<bool> createCashFlow(CashFlowEntry entry) async {
-    try {
-      _state = FinanceState.loading;
-      _errorMessage = null;
-      notifyListeners();
-
-      final success = await service.createCashFlow(entry);
-      if (success) {
-        await loadFinanceData();
-      }
-
-      _state = FinanceState.loaded;
-      notifyListeners();
-      return success;
-    } catch (e) {
-      _state = FinanceState.error;
-      _errorMessage = _parseError(e);
-      notifyListeners();
-      return false;
-    }
-  }
-
-  /// Update existing cash flow entry
-  Future<bool> updateCashFlow(CashFlowEntry entry) async {
-    try {
-      _state = FinanceState.loading;
-      _errorMessage = null;
-      notifyListeners();
-
-      final success = await service.updateCashFlow(entry);
-      if (success) {
-        await loadFinanceData();
-      }
-
-      _state = FinanceState.loaded;
-      notifyListeners();
-      return success;
-    } catch (e) {
-      _state = FinanceState.error;
-      _errorMessage = _parseError(e);
-      notifyListeners();
-      return false;
-    }
-  }
-
-  /// Delete cash flow entry
-  Future<bool> deleteCashFlow(int id) async {
-    try {
-      _state = FinanceState.loading;
-      _errorMessage = null;
-      notifyListeners();
-
-      final success = await service.deleteCashFlow(id);
-      if (success) {
-        _history.removeWhere((e) => e.id == id);
-        // Reload to get updated summary
-        await loadFinanceData();
-      }
-
-      _state = FinanceState.loaded;
-      notifyListeners();
-      return success;
-    } catch (e) {
-      _state = FinanceState.error;
-      _errorMessage = _parseError(e);
-      notifyListeners();
-      return false;
-    }
+  /// Clear filters and reload
+  Future<void> clearFilters() async {
+    _statusFilter = null;
+    _startDateFilter = null;
+    _endDateFilter = null;
+    await loadFinanceData();
   }
 
   /// Clear error
