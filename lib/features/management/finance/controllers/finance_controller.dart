@@ -21,11 +21,19 @@ class FinanceController extends ChangeNotifier {
   FinancialReportModel? get summary => _summary;
   List<CashFlowEntry> get history => _history;
 
+  /// Get income entries
+  List<CashFlowEntry> get incomeEntries =>
+      _history.where((e) => e.type == 'IN').toList();
+
+  /// Get expense entries
+  List<CashFlowEntry> get expenseEntries =>
+      _history.where((e) => e.type == 'OUT').toList();
+
   Future<void> loadFinanceData() async {
     try {
       _state = FinanceState.loading;
       notifyListeners();
-      
+
       _summary = await service.getFinancialSummary();
       _history = await service.getCashFlowHistory();
 
@@ -33,12 +41,13 @@ class FinanceController extends ChangeNotifier {
       _errorMessage = null;
     } catch (e) {
       _state = FinanceState.error;
-      _errorMessage = e.toString();
+      _errorMessage = _parseError(e);
     } finally {
       notifyListeners();
     }
   }
 
+  /// Save (create or update) cash flow entry
   Future<bool> saveCashFlow(CashFlowEntry entry) async {
     try {
       _state = FinanceState.loading;
@@ -52,9 +61,95 @@ class FinanceController extends ChangeNotifier {
       return false;
     } catch (e) {
       _state = FinanceState.error;
-      _errorMessage = e.toString();
+      _errorMessage = _parseError(e);
       notifyListeners();
       return false;
     }
+  }
+
+  /// Create new cash flow entry
+  Future<bool> createCashFlow(CashFlowEntry entry) async {
+    try {
+      _state = FinanceState.loading;
+      _errorMessage = null;
+      notifyListeners();
+
+      final success = await service.createCashFlow(entry);
+      if (success) {
+        await loadFinanceData();
+      }
+
+      _state = FinanceState.loaded;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _state = FinanceState.error;
+      _errorMessage = _parseError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Update existing cash flow entry
+  Future<bool> updateCashFlow(CashFlowEntry entry) async {
+    try {
+      _state = FinanceState.loading;
+      _errorMessage = null;
+      notifyListeners();
+
+      final success = await service.updateCashFlow(entry);
+      if (success) {
+        await loadFinanceData();
+      }
+
+      _state = FinanceState.loaded;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _state = FinanceState.error;
+      _errorMessage = _parseError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Delete cash flow entry
+  Future<bool> deleteCashFlow(int id) async {
+    try {
+      _state = FinanceState.loading;
+      _errorMessage = null;
+      notifyListeners();
+
+      final success = await service.deleteCashFlow(id);
+      if (success) {
+        _history.removeWhere((e) => e.id == id);
+        // Reload to get updated summary
+        await loadFinanceData();
+      }
+
+      _state = FinanceState.loaded;
+      notifyListeners();
+      return success;
+    } catch (e) {
+      _state = FinanceState.error;
+      _errorMessage = _parseError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Clear error
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+
+  /// Parse error message
+  String _parseError(dynamic e) {
+    final errorStr = e.toString();
+    if (errorStr.contains('Exception: ')) {
+      return errorStr.substring(errorStr.indexOf('Exception: ') + 11);
+    }
+    return errorStr;
   }
 }

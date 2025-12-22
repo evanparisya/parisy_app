@@ -32,7 +32,13 @@ class _BendaharaFinanceScreenState extends State<BendaharaFinanceScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.primaryBlack),
-        title: Text('Kelola Uang & History', style: TextStyle(color: AppColors.primaryBlack, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Kelola Uang & History',
+          style: TextStyle(
+            color: AppColors.primaryBlack,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           // Tombol Add diaktifkan di sini
           IconButton(
@@ -43,7 +49,8 @@ class _BendaharaFinanceScreenState extends State<BendaharaFinanceScreen> {
       ),
       body: Consumer<FinanceController>(
         builder: (context, controller, child) {
-          if (controller.state == FinanceState.loading && controller.summary == null) {
+          if (controller.state == FinanceState.loading &&
+              controller.summary == null) {
             return Center(child: CircularProgressIndicator());
           }
 
@@ -59,21 +66,38 @@ class _BendaharaFinanceScreenState extends State<BendaharaFinanceScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // --- Financial Summary Card ---
-                  if (summary != null)
-                    _FinancialSummaryCard(summary: summary),
+                  if (summary != null) _FinancialSummaryCard(summary: summary),
                   SizedBox(height: 24),
 
                   // --- Cash Flow History ---
-                  Text('History Arus Kas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlack)),
+                  Text(
+                    'History Arus Kas',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryBlack,
+                    ),
+                  ),
                   SizedBox(height: 12),
-                  
-                  if (controller.state == FinanceState.loading && summary != null)
-                    Center(child: LinearProgressIndicator(color: AppColors.primaryGreen)),
+
+                  if (controller.state == FinanceState.loading &&
+                      summary != null)
+                    Center(
+                      child: LinearProgressIndicator(
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
 
                   if (history.isEmpty)
                     EmptyStateWidget(message: 'Belum ada riwayat arus kas.'),
 
-                  ...history.map((entry) => _CashFlowItemCard(entry: entry)),
+                  ...history.map(
+                    (entry) => _CashFlowItemCard(
+                      entry: entry,
+                      onEdit: () => _showCashFlowFormDialog(context, entry),
+                      onDelete: () => _showDeleteConfirmDialog(context, entry),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -82,11 +106,52 @@ class _BendaharaFinanceScreenState extends State<BendaharaFinanceScreen> {
       ),
     );
   }
-  
+
   void _showCashFlowFormDialog(BuildContext context, CashFlowEntry? entry) {
     showDialog(
       context: context,
       builder: (context) => _CashFlowFormDialog(entry: entry),
+    );
+  }
+
+  void _showDeleteConfirmDialog(BuildContext context, CashFlowEntry entry) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Konfirmasi Hapus'),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus "${entry.description}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              final controller = context.read<FinanceController>();
+              final success = await controller.deleteCashFlow(entry.id);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success
+                          ? 'Data berhasil dihapus'
+                          : (controller.errorMessage ?? 'Gagal menghapus data'),
+                    ),
+                    backgroundColor: success
+                        ? AppColors.primaryGreen
+                        : AppColors.errorRed,
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.errorRed),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -98,7 +163,11 @@ class _SummaryBox extends StatelessWidget {
   final double value;
   final Color color;
 
-  const _SummaryBox({required this.title, required this.value, required this.color});
+  const _SummaryBox({
+    required this.title,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -111,11 +180,22 @@ class _SummaryBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray)),
+          Text(
+            title,
+            style: TextStyle(fontSize: 12, color: AppColors.neutralDarkGray),
+          ),
           SizedBox(height: 4),
           Text(
-            NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(value),
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+            NumberFormat.currency(
+              locale: 'id',
+              symbol: 'Rp ',
+              decimalDigits: 0,
+            ).format(value),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -137,26 +217,40 @@ class _FinancialSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saldo Bersih', style: TextStyle(fontSize: 14, color: AppColors.neutralDarkGray)),
+            Text(
+              'Saldo Bersih',
+              style: TextStyle(fontSize: 14, color: AppColors.neutralDarkGray),
+            ),
             SizedBox(height: 4),
             Text(
-              NumberFormat.currency(locale: 'id', symbol: 'Rp ').format(summary.netBalance),
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+              NumberFormat.currency(
+                locale: 'id',
+                symbol: 'Rp ',
+              ).format(summary.netBalance),
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryGreen,
+              ),
             ),
             SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _SummaryBox(
-                  title: 'Pemasukan',
-                  value: summary.totalIncome,
-                  color: AppColors.primaryGreen,
-                )),
+                Expanded(
+                  child: _SummaryBox(
+                    title: 'Pemasukan',
+                    value: summary.totalIncome,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
                 SizedBox(width: 16),
-                Expanded(child: _SummaryBox(
-                  title: 'Pengeluaran',
-                  value: summary.totalExpense,
-                  color: AppColors.errorRed,
-                )),
+                Expanded(
+                  child: _SummaryBox(
+                    title: 'Pengeluaran',
+                    value: summary.totalExpense,
+                    color: AppColors.errorRed,
+                  ),
+                ),
               ],
             ),
           ],
@@ -168,7 +262,13 @@ class _FinancialSummaryCard extends StatelessWidget {
 
 class _CashFlowItemCard extends StatelessWidget {
   final CashFlowEntry entry;
-  const _CashFlowItemCard({required this.entry});
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  const _CashFlowItemCard({
+    required this.entry,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -176,26 +276,80 @@ class _CashFlowItemCard extends StatelessWidget {
     final color = isIncome ? AppColors.primaryGreen : AppColors.errorRed;
 
     return Card(
-      margin: EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: AppColors.neutralGray)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: AppColors.neutralGray),
+      ),
       child: ListTile(
-        contentPadding: EdgeInsets.all(16),
+        onTap: onEdit,
+        contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
           backgroundColor: color.withOpacity(0.1),
           child: Icon(isIncome ? Icons.add : Icons.remove, color: color),
         ),
-        title: Text(entry.description, style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          entry.description,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(DateFormat('dd MMM yyyy').format(entry.date)),
-        trailing: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.center,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '${isIncome ? '+' : '-'} ${NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(entry.amount)}',
-              style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${isIncome ? '+' : '-'} ${NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0).format(entry.amount)}',
+                  style: TextStyle(color: color, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  entry.sourceOrDestination,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.neutralDarkGray,
+                  ),
+                ),
+              ],
             ),
-            Text(entry.sourceOrDestination, style: TextStyle(fontSize: 10, color: AppColors.neutralDarkGray)),
+            const SizedBox(width: 8),
+            PopupMenuButton<String>(
+              icon: const Icon(
+                Icons.more_vert,
+                color: AppColors.neutralDarkGray,
+              ),
+              onSelected: (value) {
+                if (value == 'edit') onEdit();
+                if (value == 'delete') onDelete();
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit, size: 18),
+                      SizedBox(width: 8),
+                      Text('Edit'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete, size: 18, color: AppColors.errorRed),
+                      SizedBox(width: 8),
+                      Text(
+                        'Hapus',
+                        style: TextStyle(color: AppColors.errorRed),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -216,15 +370,30 @@ class _CashFlowFormDialogState extends State<_CashFlowFormDialog> {
   late TextEditingController _descController;
   late TextEditingController _amountController;
   late TextEditingController _sourceController;
-  String? _selectedType;
+  String _selectedType = 'IN';
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _descController = TextEditingController(text: widget.entry?.description ?? '');
-    _amountController = TextEditingController(text: widget.entry?.amount.toString() ?? '');
-    _sourceController = TextEditingController(text: widget.entry?.sourceOrDestination ?? '');
+    _descController = TextEditingController(
+      text: widget.entry?.description ?? '',
+    );
+    _amountController = TextEditingController(
+      text: widget.entry?.amount.toStringAsFixed(0) ?? '',
+    );
+    _sourceController = TextEditingController(
+      text: widget.entry?.sourceOrDestination ?? '',
+    );
     _selectedType = widget.entry?.type ?? 'IN';
+  }
+
+  @override
+  void dispose() {
+    _descController.dispose();
+    _amountController.dispose();
+    _sourceController.dispose();
+    super.dispose();
   }
 
   @override
@@ -239,39 +408,106 @@ class _CashFlowFormDialogState extends State<_CashFlowFormDialog> {
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'Tipe'),
-                initialValue: _selectedType,
-                items: ['IN', 'OUT'].map((t) => DropdownMenuItem(value: t, child: Text(t == 'IN' ? 'Pemasukan' : 'Pengeluaran'))).toList(),
-                onChanged: (value) => setState(() => _selectedType = value),
+                decoration: const InputDecoration(labelText: 'Tipe'),
+                value: _selectedType,
+                items: const [
+                  DropdownMenuItem(value: 'IN', child: Text('Pemasukan')),
+                  DropdownMenuItem(value: 'OUT', child: Text('Pengeluaran')),
+                ],
+                onChanged: (value) =>
+                    setState(() => _selectedType = value ?? 'IN'),
               ),
-              SizedBox(height: 12),
-              InputField(label: 'Deskripsi', hint: 'Misal: Penjualan sayur', controller: _descController),
-              SizedBox(height: 12),
-              InputField(label: 'Jumlah (Rp)', hint: 'Jumlah uang', controller: _amountController, keyboardType: TextInputType.number),
-              SizedBox(height: 12),
-              InputField(label: 'Sumber/Tujuan', hint: 'Misal: Marketplace / Kas Umum', controller: _sourceController),
+              const SizedBox(height: 12),
+              InputField(
+                label: 'Deskripsi',
+                hint: 'Misal: Penjualan sayur',
+                controller: _descController,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Deskripsi wajib diisi' : null,
+              ),
+              const SizedBox(height: 12),
+              InputField(
+                label: 'Jumlah (Rp)',
+                hint: 'Jumlah uang',
+                controller: _amountController,
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Jumlah wajib diisi';
+                  if (double.tryParse(v) == null)
+                    return 'Masukkan angka yang valid';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              InputField(
+                label: 'Sumber/Tujuan',
+                hint: 'Misal: Marketplace / Kas Umum',
+                controller: _sourceController,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? 'Sumber/Tujuan wajib diisi'
+                    : null,
+              ),
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text('Batal')),
-        TextButton(onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            final entry = CashFlowEntry(
-              id: widget.entry?.id ?? 0,
-              description: _descController.text,
-              amount: double.tryParse(_amountController.text) ?? 0.0,
-              type: _selectedType!,
-              date: widget.entry?.date ?? DateTime.now(),
-              sourceOrDestination: _sourceController.text,
-            );
-
-            context.read<FinanceController>().saveCashFlow(entry);
-            Navigator.pop(context);
-          }
-        }, child: Text('Simpan')),
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: const Text('Batal'),
+        ),
+        TextButton(
+          onPressed: _isLoading ? null : _saveForm,
+          child: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Simpan'),
+        ),
       ],
     );
+  }
+
+  Future<void> _saveForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final entry = CashFlowEntry(
+      id: widget.entry?.id ?? 0,
+      description: _descController.text.trim(),
+      amount: double.tryParse(_amountController.text) ?? 0.0,
+      type: _selectedType,
+      date: widget.entry?.date ?? DateTime.now(),
+      sourceOrDestination: _sourceController.text.trim(),
+    );
+
+    final controller = context.read<FinanceController>();
+    bool success;
+
+    if (widget.entry == null) {
+      success = await controller.createCashFlow(entry);
+    } else {
+      success = await controller.updateCashFlow(entry);
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? 'Data berhasil disimpan'
+                : (controller.errorMessage ?? 'Gagal menyimpan data'),
+          ),
+          backgroundColor: success
+              ? AppColors.primaryGreen
+              : AppColors.errorRed,
+        ),
+      );
+    }
   }
 }

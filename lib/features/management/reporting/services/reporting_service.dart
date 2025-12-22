@@ -1,52 +1,201 @@
 // lib/features/management/reporting/services/reporting_service.dart
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:parisy_app/core/api/api_client.dart';
 import 'package:parisy_app/features/management/reporting/models/product_report_model.dart';
 import 'package:parisy_app/features/management/reporting/models/transaction_report_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ReportingService {
   final ApiClient apiClient;
 
-  static const bool useMock = true;
-
   ReportingService({required this.apiClient});
 
-  // --- History Transaksi ---
-  Future<List<TransactionReportModel>> getTransactionHistory() async {
-    if (useMock) {
-      await Future.delayed(Duration(seconds: 1));
-      return [
-        TransactionReportModel(
-          id: 1, code: 'TRX-001', userId: 6, userName: 'Warga Biasa', priceTotal: 45000.0,
-          statusTransaction: 'paid', statusPayment: 'transfer', createdAt: DateTime(2025, 12, 5, 10, 30),
-          details: [
-            DetailTransactionModel(vegetableId: 101, vegetableName: 'Bayam Merah Organik', quantity: 3, priceUnit: 15000, subtotal: 45000),
-          ],
-        ),
-        TransactionReportModel(
-          id: 2, code: 'TRX-002', userId: 10, userName: 'Budi Santoso', priceTotal: 22000.0,
-          statusTransaction: 'pending', statusPayment: 'cash', createdAt: DateTime(2025, 12, 6, 11, 0),
-          details: [
-            DetailTransactionModel(vegetableId: 102, vegetableName: 'Wortel Jumbo', quantity: 1, priceUnit: 22000, subtotal: 22000),
-          ],
-        ),
-      ];
+  /// Helper method to get JWT token
+  Future<String> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null || token.isEmpty) {
+      throw Exception('Token tidak ditemukan. Silakan login kembali.');
     }
-    throw UnimplementedError('API get transaction history belum diimplementasi');
+    return token;
   }
 
-  // --- History Barang ---
-  Future<List<ProductReportModel>> getProductHistory() async {
-    if (useMock) {
-      await Future.delayed(Duration(seconds: 1));
-      return [
-        ProductReportModel(
-          id: 101, name: 'Bayam Merah Organik', description: 'Bayam segar', price: 15000, stock: 50, image: '', category: 'daun', status: 'available', createdBy: 1, createdByName: 'Admin Utama', createdAt: DateTime(2024, 1, 1),
-        ),
-        ProductReportModel(
-          id: 102, name: 'Wortel Jumbo', description: 'Wortel impor', price: 22000, stock: 15, image: '', category: 'akar', status: 'available', createdBy: 2, createdByName: 'Ketua RT 01', createdAt: DateTime(2024, 1, 5),
-        ),
-      ];
+  /// Helper method to get authorization options
+  Future<Options> _getAuthOptions() async {
+    final token = await _getToken();
+    return Options(headers: {'Authorization': 'Bearer $token'});
+  }
+
+  // --- Get All Transaction History (Admin/Sekretaris) ---
+  // GET /transaction/all - Mengambil semua transaksi dari semua user
+  Future<List<TransactionReportModel>> getTransactionHistory() async {
+    try {
+      debugPrint('🔵 Fetching all transaction history...');
+      final options = await _getAuthOptions();
+
+      final response = await apiClient.dio.get(
+        '/transaction/all',
+        options: options,
+      );
+
+      debugPrint('✅ All transactions received: ${response.data}');
+
+      if (response.data is List) {
+        return (response.data as List)
+            .map((json) => TransactionReportModel.fromJson(json))
+            .toList();
+      }
+
+      return [];
+    } on DioException catch (e) {
+      debugPrint('❌ DioException fetching transactions: ${e.message}');
+      if (e.response != null) {
+        final message =
+            e.response?.data['message'] ?? 'Gagal mengambil riwayat transaksi';
+        throw Exception(message);
+      }
+      throw Exception('Tidak dapat terhubung ke server');
+    } catch (e) {
+      debugPrint('❌ Error fetching transaction history: $e');
+      rethrow;
     }
-    throw UnimplementedError('API get product history belum diimplementasi');
+  }
+
+  // --- Update Transaction Status (Admin/Sekretaris) ---
+  // POST /transaction/update/[id]
+  Future<bool> updateTransactionStatus({
+    required int transactionId,
+    String? transactionStatus,
+    String? paymentMethod,
+    String? notes,
+  }) async {
+    try {
+      debugPrint('🔵 Updating transaction $transactionId...');
+      final options = await _getAuthOptions();
+
+      final Map<String, dynamic> data = {};
+      if (transactionStatus != null)
+        data['transaction_status'] = transactionStatus;
+      if (paymentMethod != null) data['payment_method'] = paymentMethod;
+      if (notes != null) data['notes'] = notes;
+
+      final response = await apiClient.dio.post(
+        '/transaction/update/$transactionId',
+        data: data,
+        options: options,
+      );
+
+      debugPrint('✅ Transaction updated: ${response.data}');
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      debugPrint('❌ DioException updating transaction: ${e.message}');
+      if (e.response != null) {
+        final message =
+            e.response?.data['message'] ?? 'Gagal memperbarui transaksi';
+        throw Exception(message);
+      }
+      throw Exception('Tidak dapat terhubung ke server');
+    } catch (e) {
+      debugPrint('❌ Error updating transaction: $e');
+      rethrow;
+    }
+  }
+
+  // --- Get Transaction Detail (Admin/Sekretaris) ---
+  // GET /transaction/detail/[id]
+  Future<TransactionReportModel> getTransactionDetail(int transactionId) async {
+    try {
+      debugPrint('🔵 Fetching transaction detail for ID: $transactionId...');
+      final options = await _getAuthOptions();
+
+      final response = await apiClient.dio.get(
+        '/transaction/detail/$transactionId',
+        options: options,
+      );
+
+      debugPrint('✅ Transaction detail received: ${response.data}');
+      return TransactionReportModel.fromJson(response.data);
+    } on DioException catch (e) {
+      debugPrint('❌ DioException fetching detail: ${e.message}');
+      if (e.response != null) {
+        final message =
+            e.response?.data['message'] ?? 'Gagal mengambil detail transaksi';
+        throw Exception(message);
+      }
+      throw Exception('Tidak dapat terhubung ke server');
+    } catch (e) {
+      debugPrint('❌ Error fetching transaction detail: $e');
+      rethrow;
+    }
+  }
+
+  // --- Delete Transaction (Admin/Sekretaris) ---
+  // DELETE /transaction/delete/[id]
+  Future<bool> deleteTransaction(int transactionId) async {
+    try {
+      debugPrint('🔵 Deleting transaction $transactionId...');
+      final options = await _getAuthOptions();
+
+      final response = await apiClient.dio.delete(
+        '/transaction/delete/$transactionId',
+        options: options,
+      );
+
+      debugPrint('✅ Transaction deleted: ${response.data}');
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      debugPrint('❌ DioException deleting transaction: ${e.message}');
+      if (e.response != null) {
+        final message =
+            e.response?.data['message'] ?? 'Gagal menghapus transaksi';
+        throw Exception(message);
+      }
+      throw Exception('Tidak dapat terhubung ke server');
+    } catch (e) {
+      debugPrint('❌ Error deleting transaction: $e');
+      rethrow;
+    }
+  }
+
+  // --- Get All Products History ---
+  // GET /vegetable/list
+  Future<List<ProductReportModel>> getProductHistory() async {
+    try {
+      debugPrint('🔵 Fetching product history...');
+      final options = await _getAuthOptions();
+
+      final response = await apiClient.dio.get(
+        '/vegetable/admin/list',
+        options: options,
+      );
+
+      debugPrint('✅ Products received: ${response.data}');
+
+      if (response.data is Map && response.data['vegetables'] is List) {
+        return (response.data['vegetables'] as List)
+            .map((json) => ProductReportModel.fromJson(json))
+            .toList();
+      }
+
+      if (response.data is List) {
+        return (response.data as List)
+            .map((json) => ProductReportModel.fromJson(json))
+            .toList();
+      }
+
+      return [];
+    } on DioException catch (e) {
+      debugPrint('❌ DioException fetching products: ${e.message}');
+      if (e.response != null) {
+        final message =
+            e.response?.data['message'] ?? 'Gagal mengambil data produk';
+        throw Exception(message);
+      }
+      throw Exception('Tidak dapat terhubung ke server');
+    } catch (e) {
+      debugPrint('❌ Error fetching product history: $e');
+      rethrow;
+    }
   }
 }
