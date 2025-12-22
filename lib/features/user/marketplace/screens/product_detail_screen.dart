@@ -246,6 +246,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildProductImage() {
+    // Jika imageUrl kosong atau null, langsung tampilkan placeholder
+    if (widget.product.imageUrl.isEmpty) {
+      return _buildPlaceholderImage();
+    }
+
     try {
       // Decode base64 image dengan error handling
       final imageBytes = base64Decode(widget.product.imageUrl);

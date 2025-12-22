@@ -11,9 +11,8 @@ class AppConstants {
   static const String tokenKey = 'auth_token';
   static const String userKey = 'user_data';
 
-  // Dummy Image - Simple 1x1 gray placeholder in base64
-  static const String dummyImageBase64 =
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  // Empty string untuk image placeholder (no dummy image)
+  static const String dummyImageBase64 = '';
 }
 
 class AppStrings {

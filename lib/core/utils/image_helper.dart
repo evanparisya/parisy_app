@@ -102,15 +102,15 @@ class ImageHelper {
     return decodeBase64Image(base64String) != null;
   }
 
-  /// Mendapatkan dummy image sebagai fallback
+  /// Mendapatkan empty string untuk placeholder (no dummy image)
   static String getDummyImage() {
-    return AppConstants.dummyImageBase64;
+    return '';
   }
 
-  /// Normalize image string - mengembalikan valid base64 atau dummy
+  /// Normalize image string - mengembalikan valid base64 atau empty string
   static String normalizeImageString(String? imageString) {
     if (imageString == null || imageString.trim().isEmpty) {
-      return AppConstants.dummyImageBase64;
+      return '';
     }
 
     // Validasi apakah base64 valid
@@ -118,7 +118,7 @@ class ImageHelper {
       return imageString.trim();
     }
 
-    // Jika tidak valid, return dummy
-    return AppConstants.dummyImageBase64;
+    // Jika tidak valid, return empty string untuk menampilkan placeholder text
+    return '';
   }
 }

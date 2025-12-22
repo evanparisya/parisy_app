@@ -49,10 +49,10 @@ class ProductModel {
     }
 
     String parseImage(dynamic value) {
-      if (value == null || value == '') return AppConstants.dummyImageBase64;
+      if (value == null || value == '') return '';
 
       final String imageStr = value.toString().trim();
-      if (imageStr.isEmpty) return AppConstants.dummyImageBase64;
+      if (imageStr.isEmpty) return '';
 
       // Validasi apakah base64 valid
       try {
@@ -60,9 +60,9 @@ class ProductModel {
         base64Decode(imageStr);
         return imageStr;
       } catch (e) {
-        // Jika decode gagal, gunakan dummy image
-        print('⚠️ Invalid image format, using dummy image: $e');
-        return AppConstants.dummyImageBase64;
+        // Jika decode gagal, return empty string untuk menampilkan placeholder text
+        print('⚠️ Invalid image format, showing "No Image" placeholder: $e');
+        return '';
       }
     }
 
