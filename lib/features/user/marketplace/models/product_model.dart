@@ -1,4 +1,6 @@
 // lib/features/user/marketplace/models/product_model.dart
+import 'dart:convert';
+import 'package:parisy_app/core/constants/app_constants.dart';
 
 /// Product Model - Matches DBML 'vegetables' table
 class ProductModel {
@@ -46,13 +48,31 @@ class ProductModel {
       return 0;
     }
 
+    String parseImage(dynamic value) {
+      if (value == null || value == '') return AppConstants.dummyImageBase64;
+
+      final String imageStr = value.toString().trim();
+      if (imageStr.isEmpty) return AppConstants.dummyImageBase64;
+
+      // Validasi apakah base64 valid
+      try {
+        // Coba decode untuk validasi
+        base64Decode(imageStr);
+        return imageStr;
+      } catch (e) {
+        // Jika decode gagal, gunakan dummy image
+        print('⚠️ Invalid image format, using dummy image: $e');
+        return AppConstants.dummyImageBase64;
+      }
+    }
+
     return ProductModel(
       id: parseInt(json['id']),
       name: json['name'] ?? '',
       description: json['description'] ?? json['desc'] ?? '',
       price: parsePrice(json['price']),
       stock: parseInt(json['stock']),
-      imageUrl: json['image'] ?? json['image_url'] ?? '',
+      imageUrl: parseImage(json['image'] ?? json['image_url']),
       category: json['category'] ?? 'daun',
       status: json['status'] ?? 'available',
       createdBy: parseInt(json['created_by']),
@@ -133,6 +153,41 @@ class AddProductRequest {
       'category': category,
       'image_base64': imageBase64,
     };
+  }
+}
+
+/// Request model for updating a product
+class UpdateProductRequest {
+  final String? name;
+  final String? description;
+  final double? price;
+  final int? stock;
+  final String? category;
+  final String? status;
+  final String? image; // Base64 image string
+
+  UpdateProductRequest({
+    this.name,
+    this.description,
+    this.price,
+    this.stock,
+    this.category,
+    this.status,
+    this.image,
+  });
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+
+    if (name != null) data['name'] = name;
+    if (description != null) data['description'] = description;
+    if (price != null) data['price'] = price;
+    if (stock != null) data['stock'] = stock;
+    if (category != null) data['category'] = category;
+    if (status != null) data['status'] = status;
+    if (image != null) data['image'] = image;
+
+    return data;
   }
 }
 

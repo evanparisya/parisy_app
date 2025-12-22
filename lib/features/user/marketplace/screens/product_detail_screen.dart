@@ -48,27 +48,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Image - only show if image exists
-                  if (widget.product.imageUrl.isNotEmpty)
-                    Center(
-                      child: Container(
-                        height: 250,
-                        decoration: BoxDecoration(
-                          color: AppColors.neutralGray,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(15),
-                          child: Image.memory(
-                            base64Decode(widget.product.imageUrl),
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                SizedBox.shrink(),
-                          ),
-                        ),
+                  // Product Image - always show with error handling
+                  Center(
+                    child: Container(
+                      height: 250,
+                      decoration: BoxDecoration(
+                        color: AppColors.neutralGray,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: _buildProductImage(),
                       ),
                     ),
-                  if (widget.product.imageUrl.isNotEmpty) SizedBox(height: 20),
+                  ),
+                  SizedBox(height: 20),
 
                   // Name and Category
                   Text(
@@ -247,6 +241,50 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProductImage() {
+    try {
+      // Decode base64 image dengan error handling
+      final imageBytes = base64Decode(widget.product.imageUrl);
+      return Image.memory(
+        imageBytes,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        errorBuilder: (context, error, stackTrace) {
+          // Jika decode berhasil tapi render gagal, gunakan placeholder
+          return _buildPlaceholderImage();
+        },
+      );
+    } catch (e) {
+      // Jika base64 decode gagal, gunakan placeholder
+      print('⚠️ Error decoding image for ${widget.product.name}: $e');
+      return _buildPlaceholderImage();
+    }
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: double.infinity,
+      color: AppColors.neutralGray,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image_not_supported_outlined,
+              size: 80,
+              color: AppColors.neutralDarkGray,
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Gambar Tidak Tersedia',
+              style: TextStyle(color: AppColors.neutralDarkGray, fontSize: 14),
+            ),
+          ],
+        ),
       ),
     );
   }

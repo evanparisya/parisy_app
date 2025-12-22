@@ -10,6 +10,10 @@ class AppConstants {
   // Local Storage Keys
   static const String tokenKey = 'auth_token';
   static const String userKey = 'user_data';
+
+  // Dummy Image - Simple 1x1 gray placeholder in base64
+  static const String dummyImageBase64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 }
 
 class AppStrings {

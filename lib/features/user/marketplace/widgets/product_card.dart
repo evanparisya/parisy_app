@@ -42,58 +42,49 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image and Discount Badge - only show if image exists
-            if (product.imageUrl.isNotEmpty)
-              Expanded(
-                flex: 3,
-                child: Stack(
-                  children: [
-                    Container(
-                      width: double.infinity,
+            // Image and Discount Badge - always show with error handling
+            Expanded(
+              flex: 3,
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.neutralGray,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(15),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(15),
+                      ),
+                      child: _buildProductImage(),
+                    ),
+                  ),
+                  // Placeholder Discount Badge (Mirip desain)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.neutralGray,
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(15),
-                        ),
+                        color: AppColors.primaryBlack,
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(15),
-                        ),
-                        child: Image.memory(
-                          base64Decode(product.imageUrl),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              SizedBox.shrink(),
+                      child: Text(
+                        '-25%',
+                        style: TextStyle(
+                          color: AppColors.neutralWhite,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    // Placeholder Discount Badge (Mirip desain)
-                    Positioned(
-                      top: 10,
-                      left: 10,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryBlack,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '-25%',
-                          style: TextStyle(
-                            color: AppColors.neutralWhite,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
             // Content
             Expanded(
               flex: 2,
@@ -157,6 +148,48 @@ class ProductCard extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductImage() {
+    try {
+      // Decode base64 image dengan error handling
+      final imageBytes = base64Decode(product.imageUrl);
+      return Image.memory(
+        imageBytes,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          // Jika decode berhasil tapi render gagal, gunakan placeholder
+          return _buildPlaceholderImage();
+        },
+      );
+    } catch (e) {
+      // Jika base64 decode gagal, gunakan placeholder
+      print('⚠️ Error decoding image for ${product.name}: $e');
+      return _buildPlaceholderImage();
+    }
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      color: AppColors.neutralGray,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image_not_supported_outlined,
+              size: 48,
+              color: AppColors.neutralDarkGray,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'No Image',
+              style: TextStyle(color: AppColors.neutralDarkGray, fontSize: 12),
             ),
           ],
         ),

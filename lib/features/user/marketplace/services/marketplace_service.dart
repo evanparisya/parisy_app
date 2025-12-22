@@ -139,7 +139,7 @@ class MarketplaceService {
     try {
       final token = await _getToken();
       final response = await apiClient.dio.put(
-        '/vegetable/update-stock/$id',
+        '/vegetable/update/$id',
         data: {'stock': stock},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
@@ -162,6 +162,7 @@ class MarketplaceService {
     required int stock,
     required XFile imageFile,
     String? category,
+    String? status,
   }) async {
     try {
       final token = await _getToken();
@@ -172,13 +173,17 @@ class MarketplaceService {
       final data = {
         'name': name,
         'description': description,
-        'price': price,
-        'stock': stock,
+        'price': price.toString(),
+        'stock': stock.toString(),
         'image': imageBase64,
       };
 
       if (category != null && category.isNotEmpty) {
         data['category'] = category;
+      }
+
+      if (status != null && status.isNotEmpty) {
+        data['status'] = status;
       }
 
       print('🔵 Updating product $id with new image...');
@@ -207,6 +212,7 @@ class MarketplaceService {
     required double price,
     required int stock,
     required String category,
+    String? status,
   }) async {
     try {
       final token = await _getToken();
@@ -214,10 +220,14 @@ class MarketplaceService {
       final data = {
         'name': name,
         'description': description,
-        'price': price,
-        'stock': stock,
+        'price': price.toString(),
+        'stock': stock.toString(),
         'category': category,
       };
+
+      if (status != null && status.isNotEmpty) {
+        data['status'] = status;
+      }
 
       print('🔵 Updating product $id without new image...');
       final response = await apiClient.dio.put(
