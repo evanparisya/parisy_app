@@ -1,93 +1,99 @@
 // lib/features/user/orders/services/order_service.dart
 import 'package:parisy_app/core/api/api_client.dart';
-import 'package:parisy_app/features/user/orders/models/order_model.dart'; // Path diperiksa
+import 'package:parisy_app/features/user/orders/models/order_model.dart';
+import 'package:parisy_app/features/user/transaction/models/transaction_model.dart';
+import 'package:parisy_app/features/user/transaction/services/transaction_service.dart';
 
 class OrderService {
   final ApiClient apiClient;
-  static const bool useMock = true;
+  late final TransactionService _transactionService;
 
-  OrderService({required this.apiClient});
+  OrderService({required this.apiClient}) {
+    _transactionService = TransactionService(apiClient: apiClient);
+  }
 
-  // --- MOCK DATA ---
-  static final List<OrderModel> _mockOrders = [
-    OrderModel(
-      id: 1,
-      code: 'TRX-001',
-      userId: 6,
-      priceTotal: 45000.0,
-      statusTransaction: 'paid',
-      statusPayment: 'transfer',
-      createdAt: DateTime(2025, 12, 5, 10, 30),
-      details: [
-        OrderDetailModel(
-          vegetableId: 101,
-          vegetableName: 'Bayam Merah Organik',
-          quantity: 3,
-          priceUnit: 15000,
-          subtotal: 45000,
-        ),
-      ],
-    ),
-    OrderModel(
-      id: 2,
-      code: 'TRX-002',
-      userId: 6,
-      priceTotal: 22000.0,
-      statusTransaction: 'pending',
-      statusPayment: 'cash',
-      createdAt: DateTime(2025, 12, 6, 11, 0),
-      details: [
-        OrderDetailModel(
-          vegetableId: 102,
-          vegetableName: 'Wortel Jumbo',
-          quantity: 1,
-          priceUnit: 22000,
-          subtotal: 22000,
-        ),
-      ],
-    ),
-    OrderModel(
-      id: 3,
-      code: 'TRX-003',
-      userId: 6,
-      priceTotal: 18000.0,
-      statusTransaction: 'failed',
-      statusPayment: 'transfer',
-      createdAt: DateTime(2025, 12, 7, 15, 45),
-      details: [
-        OrderDetailModel(
-          vegetableId: 103,
-          vegetableName: 'Tomat Cherry Manis',
-          quantity: 1,
-          priceUnit: 18000,
-          subtotal: 18000,
-        ),
-      ],
-    ),
-  ];
-  // --- END MOCK DATA ---
-  
-  // Mengambil riwayat pesanan berdasarkan ID user yang login
+  /// Get order/transaction history for logged in user
+  /// Uses the transaction service to fetch from /transaction/history
   Future<List<OrderModel>> getOrderHistory(int userId) async {
-    if (useMock) {
-      await Future.delayed(const Duration(seconds: 1));
-      // Menggunakan userId yang dilewatkan dan pastikan hasil berupa List
-      return _mockOrders.where((o) => o.userId == userId).toList().reversed.toList();
-    }
-    
-    // Real API call
     try {
-      // Endpoint diasumsikan /user/orders?user_id=...
-      final response = await apiClient.dio.get('/user/orders', queryParameters: {'user_id': userId});
-      
-      if (response.statusCode == 200) {
-        final List data = response.data['orders'] ?? [];
-        return data.map((json) => OrderModel.fromJson(json)).toList();
-      } else {
-        throw Exception('Gagal mengambil riwayat pesanan: ${response.data['message']}');
-      }
+      // Fetch transactions from the backend
+      final transactions = await _transactionService.getTransactionHistory();
+
+      // Convert TransactionModel list to OrderModel list
+      return transactions.map((txn) => _convertToOrderModel(txn)).toList();
     } catch (e) {
       throw Exception('Error fetching order history: $e');
     }
   }
+
+  /// Get order/transaction detail by ID
+  Future<OrderModel> getOrderDetail(int orderId) async {
+    try {
+      final transaction = await _transactionService.getTransactionDetail(
+        orderId,
+      );
+      return _convertToOrderModel(transaction);
+    } catch (e) {
+      throw Exception('Error fetching order detail: $e');
+    }
+  }
+
+  /// Update order/transaction status
+  Future<bool> updateOrderStatus({
+    required int orderId,
+    String? transactionStatus,
+    String? paymentMethod,
+    String? notes,
+  }) async {
+    try {
+      final request = UpdateTransactionRequest(
+        transactionStatus: transactionStatus,
+        paymentMethod: paymentMethod,
+        notes: notes,
+      );
+      return await _transactionService.updateTransaction(
+        transactionId: orderId,
+        request: request,
+      );
+    } catch (e) {
+      throw Exception('Error updating order status: $e');
+    }
+  }
+
+  /// Delete an order/transaction
+  Future<bool> deleteOrder(int orderId) async {
+    try {
+      return await _transactionService.deleteTransaction(orderId);
+    } catch (e) {
+      throw Exception('Error deleting order: $e');
+    }
+  }
+
+  /// Helper method to convert TransactionModel to OrderModel
+  OrderModel _convertToOrderModel(TransactionModel txn) {
+    return OrderModel(
+      id: txn.id,
+      code: txn.code,
+      userId: txn.userId ?? 0,
+      priceTotal: txn.totalPrice,
+      statusTransaction: txn.transactionStatus,
+      statusPayment: txn.paymentMethod,
+      notes: txn.notes,
+      createdAt: txn.createdAt ?? DateTime.now(),
+      details: txn.items
+          .map(
+            (item) => OrderDetailModel.fromJson({
+              'vegetable_id': item.vegetableId,
+              'vegetable_name': 'Produk #${item.vegetableId}',
+              'quantity': item.quantity,
+              'price_unit': item.unitPrice,
+              'subtotal': item.subtotal,
+            }),
+          )
+          .toList(),
+    );
+  }
+
+  /// Get transaction service instance for direct access if needed
+  TransactionService get transactionService => _transactionService;
 }
