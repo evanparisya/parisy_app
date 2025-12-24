@@ -2,6 +2,15 @@
 // Category: daun, akar, bunga, buah
 // Status: available, unavailable
 
+// Helper function to parse double from various types
+double _parseDoubleValue(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? 0.0;
+  return 0.0;
+}
+
 class ProductReportModel {
   final int id;
   final String name;
@@ -33,8 +42,8 @@ class ProductReportModel {
     return ProductReportModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
-      description: json['desc'] ?? '', // Menggunakan 'desc' dari DBML
-      price: (json['price'] ?? 0.0).toDouble(),
+      description: json['description'] ?? json['desc'] ?? '',
+      price: _parseDoubleValue(json['price']),
       stock: json['stock'] ?? 0,
       image: json['image'] ?? '',
       category: json['category'] ?? 'daun',
