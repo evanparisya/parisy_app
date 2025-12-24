@@ -68,6 +68,7 @@ class TransactionService {
   }) async {
     try {
       debugPrint('🔵 Updating transaction $transactionId...');
+      debugPrint('🔵 Request data: ${request.toJson()}');
       final options = await _getAuthOptions();
 
       final response = await apiClient.dio.post(
@@ -77,9 +78,26 @@ class TransactionService {
       );
 
       debugPrint('✅ Transaction updated: ${response.data}');
-      return response.statusCode == 200;
+      debugPrint('✅ Status code: ${response.statusCode}');
+
+      // Check for success based on status code or message
+      if (response.statusCode == 200) {
+        return true;
+      }
+
+      // Also check if the response contains a success message
+      if (response.data is Map && response.data['message'] != null) {
+        final message = response.data['message'].toString().toLowerCase();
+        if (message.contains('berhasil') || message.contains('success')) {
+          return true;
+        }
+      }
+
+      return false;
     } on DioException catch (e) {
       debugPrint('❌ DioException updating transaction: ${e.message}');
+      debugPrint('❌ Response data: ${e.response?.data}');
+      debugPrint('❌ Status code: ${e.response?.statusCode}');
       if (e.response != null) {
         final message =
             e.response?.data['message'] ?? 'Gagal memperbarui transaksi';
