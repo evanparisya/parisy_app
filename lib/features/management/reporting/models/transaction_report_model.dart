@@ -14,7 +14,8 @@ double _parseDoubleValue(dynamic value) {
 // Merepresentasikan satu item dalam transaksi (dari detail_transactions)
 class DetailTransactionModel {
   final int vegetableId;
-  final String vegetableName; // Field tambahan untuk kemudahan display
+  String
+  vegetableName; // Field tambahan untuk kemudahan display (mutable untuk di-update)
   final int quantity;
   final double priceUnit;
   final double subtotal;
@@ -28,13 +29,19 @@ class DetailTransactionModel {
   });
 
   factory DetailTransactionModel.fromJson(Map<String, dynamic> json) {
+    final vegId = json['vegetable_id'] ?? 0;
     return DetailTransactionModel(
-      vegetableId: json['vegetable_id'] ?? 0,
-      vegetableName: json['vegetable_name'] ?? 'Produk Tidak Diketahui',
+      vegetableId: vegId,
+      vegetableName: json['vegetable_name'] ?? json['name'] ?? 'Produk #$vegId',
       quantity: json['quantity'] ?? 0,
       priceUnit: _parseDoubleValue(json['unit_price'] ?? json['price_unit']),
       subtotal: _parseDoubleValue(json['subtotal']),
     );
+  }
+
+  // Method untuk update nama dari cache produk
+  void updateName(String name) {
+    vegetableName = name;
   }
 }
 

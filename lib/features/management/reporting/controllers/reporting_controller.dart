@@ -1,4 +1,5 @@
 // lib/features/management/reporting/controllers/reporting_controller.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:parisy_app/features/management/reporting/models/product_report_model.dart';
 import 'package:parisy_app/features/management/reporting/models/transaction_report_model.dart';
@@ -23,11 +24,32 @@ class ReportingController extends ChangeNotifier {
   List<ProductReportModel> get productHistory => _productHistory;
   TransactionReportModel? get selectedTransaction => _selectedTransaction;
 
+  // Cache untuk nama produk berdasarkan ID
+  Map<int, String> _productNameCache = {};
+
   Future<void> loadTransactionHistory() async {
     try {
       _state = ReportingState.loading;
       notifyListeners();
+
+      // Load products first jika cache kosong
+      if (_productNameCache.isEmpty && _productHistory.isEmpty) {
+        try {
+          _productHistory = await service.getProductHistory();
+          // Build cache
+          for (var product in _productHistory) {
+            _productNameCache[product.id] = product.name;
+          }
+        } catch (e) {
+          debugPrint('Warning: Could not load product cache: $e');
+        }
+      }
+
       _transactionHistory = await service.getTransactionHistory();
+
+      // Update nama produk di setiap detail transaksi
+      _updateTransactionProductNames(_transactionHistory);
+
       _state = ReportingState.loaded;
       _errorMessage = null;
     } catch (e) {
@@ -38,11 +60,30 @@ class ReportingController extends ChangeNotifier {
     }
   }
 
+  /// Update nama produk dari cache ke semua detail transaksi
+  void _updateTransactionProductNames(
+    List<TransactionReportModel> transactions,
+  ) {
+    for (var transaction in transactions) {
+      for (var detail in transaction.details) {
+        if (_productNameCache.containsKey(detail.vegetableId)) {
+          detail.updateName(_productNameCache[detail.vegetableId]!);
+        }
+      }
+    }
+  }
+
   Future<void> loadProductHistory() async {
     try {
       _state = ReportingState.loading;
       notifyListeners();
       _productHistory = await service.getProductHistory();
+
+      // Update cache
+      for (var product in _productHistory) {
+        _productNameCache[product.id] = product.name;
+      }
+
       _state = ReportingState.loaded;
       _errorMessage = null;
     } catch (e) {
@@ -62,7 +103,30 @@ class ReportingController extends ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
+      // Load products first jika cache kosong
+      if (_productNameCache.isEmpty && _productHistory.isEmpty) {
+        try {
+          _productHistory = await service.getProductHistory();
+          // Build cache
+          for (var product in _productHistory) {
+            _productNameCache[product.id] = product.name;
+          }
+        } catch (e) {
+          debugPrint('Warning: Could not load product cache: $e');
+        }
+      }
+
       _selectedTransaction = await service.getTransactionDetail(transactionId);
+
+      // Update nama produk di detail
+      if (_selectedTransaction != null) {
+        for (var detail in _selectedTransaction!.details) {
+          if (_productNameCache.containsKey(detail.vegetableId)) {
+            detail.updateName(_productNameCache[detail.vegetableId]!);
+          }
+        }
+      }
+
       _state = ReportingState.loaded;
       notifyListeners();
       return _selectedTransaction;
