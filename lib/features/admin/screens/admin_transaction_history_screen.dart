@@ -59,10 +59,12 @@ class _AdminTransactionHistoryScreenState
             },
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'all', child: Text('Semua')),
-              const PopupMenuItem(value: 'pending', child: Text('Pending')),
-              const PopupMenuItem(value: 'paid', child: Text('Paid')),
-              const PopupMenuItem(value: 'completed', child: Text('Completed')),
-              const PopupMenuItem(value: 'cancelled', child: Text('Cancelled')),
+              const PopupMenuItem(value: 'pending', child: Text('Menunggu')),
+              const PopupMenuItem(value: 'completed', child: Text('Selesai')),
+              const PopupMenuItem(
+                value: 'cancelled',
+                child: Text('Dibatalkan'),
+              ),
             ],
           ),
         ],
@@ -109,13 +111,10 @@ class _TransactionCard extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'paid':
       case 'completed':
         return AppColors.primaryGreen;
       case 'pending':
-      case 'processing':
         return AppColors.accentYellow;
-      case 'failed':
       case 'cancelled':
         return AppColors.errorRed;
       default:
@@ -127,16 +126,10 @@ class _TransactionCard extends StatelessWidget {
     switch (status.toLowerCase()) {
       case 'pending':
         return 'Menunggu';
-      case 'paid':
-        return 'Dibayar';
-      case 'processing':
-        return 'Diproses';
       case 'completed':
         return 'Selesai';
       case 'cancelled':
         return 'Dibatalkan';
-      case 'failed':
-        return 'Gagal';
       default:
         return status;
     }
@@ -324,13 +317,8 @@ class _TransactionCard extends StatelessWidget {
     TransactionReportModel transaction,
   ) {
     String? selectedStatus = transaction.statusTransaction;
-    final statuses = [
-      'pending',
-      'paid',
-      'processing',
-      'completed',
-      'cancelled',
-    ];
+    // Status sesuai dengan database enum: pending, completed, cancelled
+    final statuses = ['pending', 'completed', 'cancelled'];
 
     showDialog(
       context: context,
