@@ -65,6 +65,19 @@ class TransactionReportModel {
   });
 
   factory TransactionReportModel.fromJson(Map<String, dynamic> json) {
+    // Parse details/items list safely
+    List<DetailTransactionModel> parseDetails() {
+      final detailsList = json['details'] ?? json['items'];
+      if (detailsList is List) {
+        return detailsList
+            .map(
+              (d) => DetailTransactionModel.fromJson(d as Map<String, dynamic>),
+            )
+            .toList();
+      }
+      return [];
+    }
+
     return TransactionReportModel(
       id: json['transaction_id'] ?? json['id'] ?? 0,
       code: json['code'] ?? '',
@@ -79,11 +92,7 @@ class TransactionReportModel {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
           : DateTime.now(),
-      details:
-          (json['details'] ?? json['items'] as List?)
-              ?.map((d) => DetailTransactionModel.fromJson(d))
-              .toList() ??
-          [],
+      details: parseDetails(),
     );
   }
 }
