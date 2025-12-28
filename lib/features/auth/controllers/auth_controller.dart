@@ -1,172 +1,129 @@
 import 'package:flutter/material.dart';
-import '../models/user_model.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import '../models/user_model.dart';
 
-/// Auth State enum
-/// Demonstrates: State Management 🔄
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
 
-/// Auth Controller - State Management with Provider + ChangeNotifier
-/// Demonstrates: State Management 🔄 + Async ⏳ + RestAPI 🌐
 class AuthController extends ChangeNotifier {
   final AuthService authService;
 
-  // State variables
-  /// Demonstrates: State Management 🔄
   AuthState _state = AuthState.initial;
-  UserModel? _currentUser;
   String? _errorMessage;
-  String? _token;
+  UserModel? _currentUser;
 
-  AuthController({required this.authService});
-
-  // Getters
   AuthState get state => _state;
-  UserModel? get currentUser => _currentUser;
   String? get errorMessage => _errorMessage;
-  String? get token => _token;
-  bool get isAuthenticated => _state == AuthState.authenticated;
+  UserModel? get currentUser => _currentUser;
+  bool get isAuthenticated =>
+      _state == AuthState.authenticated && _currentUser != null;
 
-  /// Login user
-  /// Demonstrates: Async ⏳ + State Management 🔄 + RestAPI 🌐 + JSON 📄
-  ///
-  /// Flow:
-  ///   1. Set state to loading, notify UI
-  ///   2. Call async API (restAPI 🌐 via authService.login())
-  ///   3. Parse JSON response with UserModel.fromJson()
-  ///   4. Save token to api client
-  ///   5. Update state to authenticated, notify UI
-  Future<bool> login({required String email, required String password}) async {
-    try {
-      /// Demonstrates: State Management 🔄
-      _state = AuthState.loading;
-      notifyListeners(); // Notify UI: loading
-
-      /// Demonstrates: Async ⏳ + RestAPI 🌐 + JSON 📄
-      /// Calls: POST /auth/login with email & password
-      final response = await authService.login(
-        email: email,
-        password: password,
-      );
-
-      _token = response.token;
-      _currentUser = response.user;
-      authService.apiClient.setToken(_token!);
-
-      /// Demonstrates: State Management 🔄
-      _state = AuthState.authenticated;
-      _errorMessage = null;
-      notifyListeners(); // Notify UI: logged in
-
-      return true;
-    } catch (e) {
-      /// Demonstrates: State Management 🔄 - error state
-      _state = AuthState.error;
-      _errorMessage = e.toString();
-      notifyListeners(); // Notify UI: error
-      return false;
-    }
+  AuthController({required this.authService}) {
+    _checkAuthentication();
   }
 
-  /// Register user
-  /// Demonstrates: Async ⏳ + State Management 🔄 + RestAPI 🌐 + JSON 📄
-  ///
-  /// Similar to login but with additional name parameter
-  Future<bool> register({
-    required String email,
-    required String password,
-    required String name,
-  }) async {
-    try {
-      /// Demonstrates: State Management 🔄
-      _state = AuthState.loading;
-      notifyListeners(); // Notify UI: loading
-
-      /// Demonstrates: Async ⏳ + RestAPI 🌐 + JSON 📄
-      /// Calls: POST /auth/register with email, password, name
-      final response = await authService.register(
-        email: email,
-        password: password,
-        name: name,
-      );
-
-      _token = response.token;
-      _currentUser = response.user;
-      authService.apiClient.setToken(_token!);
-
-      /// Demonstrates: State Management 🔄
-      _state = AuthState.authenticated;
-      _errorMessage = null;
-      notifyListeners(); // Notify UI: registered & logged in
-
-      return true;
-    } catch (e) {
-      /// Demonstrates: State Management 🔄 - error state
-      _state = AuthState.error;
-      _errorMessage = e.toString();
-      notifyListeners(); // Notify UI: error
-      return false;
-    }
+  void _setState(AuthState newState) {
+    _state = newState;
+    notifyListeners();
   }
 
-  /// Logout user
-  /// Demonstrates: Async ⏳ + State Management 🔄 + RestAPI 🌐
-  Future<void> logout() async {
-    try {
-      /// Demonstrates: State Management 🔄
-      _state = AuthState.loading;
-      notifyListeners(); // Notify UI: loading
-
-      /// Demonstrates: Async ⏳ + RestAPI 🌐
-      /// Calls: POST /auth/logout
-      await authService.logout();
-
-      _token = null;
-      _currentUser = null;
-
-      /// Demonstrates: State Management 🔄
-      _state = AuthState.unauthenticated;
-      _errorMessage = null;
-      notifyListeners(); // Notify UI: logged out
-    } catch (e) {
-      /// Demonstrates: State Management 🔄 - error state
-      _state = AuthState.error;
-      _errorMessage = e.toString();
-      notifyListeners(); // Notify UI: error
-    }
+  void _setError(String message) {
+    _errorMessage = message;
+    _setState(AuthState.error);
   }
 
-  /// Verify and restore token
-  /// Demonstrates: Async ⏳ + State Management 🔄 + RestAPI 🌐 + JSON 📄
-  Future<void> verifyToken(String token) async {
-    try {
-      /// Demonstrates: State Management 🔄
-      _state = AuthState.loading;
-      notifyListeners(); // Notify UI: verifying
-
-      authService.apiClient.setToken(token);
-      _token = token;
-
-      /// Demonstrates: Async ⏳ + RestAPI 🌐 + JSON 📄
-      /// Calls: GET /auth/verify with token header
-      final user = await authService.verifyToken();
-      _currentUser = user;
-
-      /// Demonstrates: State Management 🔄
-      _state = AuthState.authenticated;
-      _errorMessage = null;
-      notifyListeners(); // Notify UI: verified & restored
-    } catch (e) {
-      /// Demonstrates: State Management 🔄 - unauthenticated state
-      _state = AuthState.unauthenticated;
-      _errorMessage = e.toString();
-      notifyListeners(); // Notify UI: not authenticated
-    }
-  }
-
-  /// Clear error message
   void clearError() {
     _errorMessage = null;
-    notifyListeners();
+    if (_state == AuthState.error) {
+      _setState(AuthState.initial);
+    }
+  }
+
+  // Check authentication on init
+  Future<void> _checkAuthentication() async {
+    final isLoggedIn = await authService.isLoggedIn();
+    if (isLoggedIn) {
+      await _loadUserFromPrefs();
+      if (_currentUser != null) {
+        _setState(AuthState.authenticated);
+      } else {
+        _setState(AuthState.unauthenticated);
+      }
+    } else {
+      _setState(AuthState.unauthenticated);
+    }
+  }
+
+  // Load user from SharedPreferences
+  Future<void> _loadUserFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString('user');
+      if (userJson != null) {
+        final userData = json.decode(userJson);
+        _currentUser = UserModel.fromJson(userData);
+      }
+    } catch (e) {
+      _currentUser = null;
+    }
+  }
+
+  // Login
+  Future<void> login({required String email, required String password}) async {
+    _setState(AuthState.loading);
+    _errorMessage = null;
+
+    final result = await authService.login(email, password);
+
+    if (result['success']) {
+      // Load user data
+      await _loadUserFromPrefs();
+      _setState(AuthState.authenticated);
+    } else {
+      _setError(result['message'] ?? 'Login gagal');
+    }
+  }
+
+  // Register
+  Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+    required String address,
+    required String phone,
+    required String role,
+    required String subRole,
+  }) async {
+    _setState(AuthState.loading);
+    _errorMessage = null;
+
+    final result = await authService.register(
+      name,
+      email,
+      address,
+      phone,
+      password,
+      role,
+      subRole,
+    );
+
+    if (result['success']) {
+      _setState(AuthState.initial);
+    } else {
+      _setError(result['message'] ?? 'Registrasi gagal');
+    }
+  }
+
+  // Logout
+  Future<void> logout() async {
+    await authService.logout();
+    _currentUser = null;
+    _setState(AuthState.unauthenticated);
+  }
+
+  // Check auth
+  Future<bool> isLoggedIn() async {
+    return await authService.isLoggedIn();
   }
 }

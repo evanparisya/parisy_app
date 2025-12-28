@@ -1,289 +1,86 @@
-import 'package:dio/dio.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/api/api_client.dart';
-import '../models/user_model.dart';
 
 class AuthService {
   final ApiClient apiClient;
 
-  // Enable mock mode for testing (set to false when backend is ready)
-  static const bool useMockAuth = true;
-
   AuthService({required this.apiClient});
 
-  // Login dengan mock data untuk testing
-  Future<AuthResponse> login({
-    required String email,
-    required String password,
-  }) async {
-    // Jika mock mode aktif, gunakan mock data
-    if (useMockAuth) {
-      return _mockLogin(email: email, password: password);
-    }
-
-    // Jika tidak, gunakan API real
-    return _apiLogin(email: email, password: password);
-  }
-
-  // Mock Login untuk testing (tanpa API)
-  Future<AuthResponse> _mockLogin({
-    required String email,
-    required String password,
-  }) async {
-    // Simulate network delay
-    await Future.delayed(Duration(seconds: 2));
-
-    // --- Akun Utama ---
-    // Check admin credentials
-    if (email == 'admin@gmail.com' && password == 'password') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil',
-        user: UserModel(
-          id: 'ADMIN-001',
-          name: 'Admin Parisy',
-          email: email,
-          phone: '081234567890',
-          address: 'Jakarta, Indonesia',
-          createdAt: DateTime.now(),
-          role: 'ADMIN', 
-        ),
-        token: 'mock_token_admin_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    }
-    
-    // 2. KETUA RT (Manajemen)
-    if (email == 'rt@gmail.com' && password == 'password') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil sebagai Ketua RT',
-        user: UserModel(
-          id: 'USER-RT-001',
-          name: 'Ketua RT 01',
-          email: email,
-          phone: '081234567891',
-          address: 'Jakarta, Sektor RT',
-          createdAt: DateTime.now(),
-          role: 'RT', // ROLE BARU
-        ),
-        token: 'mock_token_rt_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    }
-
-    // 3. KETUA RW (Manajemen)
-    if (email == 'rw@gmail.com' && password == 'password') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil sebagai Ketua RW',
-        user: UserModel(
-          id: 'USER-RW-001',
-          name: 'Ketua RW 05',
-          email: email,
-          phone: '081234567892',
-          address: 'Jakarta, Sektor RW',
-          createdAt: DateTime.now(),
-          role: 'RW', // ROLE BARU
-        ),
-        token: 'mock_token_rw_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    }
-
-    // 4. USER BIASA (user@gmail.com)
-    if (email == 'user@gmail.com' && password == 'password') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil',
-        user: UserModel(
-          id: 'USER-001',
-          name: 'User',
-          email: email,
-          phone: '081234567890',
-          address: 'Jakarta, Indonesia',
-          createdAt: DateTime.now(),
-          role: 'USER',
-        ),
-        token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    }
-    
-    // 5. USER TEST (user@example.com)
-    if (email == 'user@example.com' && password == 'password123') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil',
-        user: UserModel(
-          id: 'USER-TEST-002',
-          name: 'USER TEST',
-          email: email,
-          phone: '081234567890',
-          address: 'Jakarta, Indonesia',
-          createdAt: DateTime.now(),
-          role: 'USER', 
-        ),
-        token: 'mock_token_test_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    }
-    
-    // 6. SELLER TEST (seller@example.com)
-    if (email == 'seller@example.com' && password == 'seller123') {
-      return AuthResponse(
-        success: true,
-        message: 'Login berhasil',
-        user: UserModel(
-          id: 'SELLER-TEST-003',
-          name: 'SELLER TEST',
-          email: email,
-          phone: '081234567890',
-          address: 'Jakarta, Indonesia',
-          createdAt: DateTime.now(),
-          role: 'SELLER', 
-        ),
-        token: 'mock_token_seller_${DateTime.now().millisecondsSinceEpoch}',
-      );
-    }
-
-    throw Exception('Email atau password salah');
-  }
-
-  // Real API Login
-  Future<AuthResponse> _apiLogin({
-    required String email,
-    required String password,
-  }) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      final loginRequest = LoginRequest(email: email, password: password);
+      final result = await apiClient.post('auth/login', {
+        'email': email,
+        'password': password,
+      });
 
-      final response = await apiClient.dio.post(
-        '/auth/login',
-        data: loginRequest.toJson(),
-      );
+      if (result['success'] == true) {
+        if (result['token'] == null || result['user'] == null) {
+          return {
+            'success': false,
+            'message': 'Response tidak lengkap dari server',
+          };
+        }
 
-      if (response.statusCode == 200) {
-        return AuthResponse.fromJson(response.data);
-      } else {
-        throw Exception('Login failed');
+        await _saveAuthData(
+          token: result['token'].toString(),
+          userData: result['user'],
+        );
       }
-    } on DioException catch (e) {
-      throw Exception('Login error: ${e.message}');
+
+      return result;
     } catch (e) {
-      throw Exception('Unexpected error: $e');
+      return {
+        'success': false,
+        'message': 'Terjadi kesalahan saat login: ${e.toString()}',
+      };
     }
   }
 
-  // Register
-  Future<AuthResponse> register({
-    required String email,
-    required String password,
-    required String name,
-  }) async {
-    // Jika mock mode aktif, gunakan mock data
-    if (useMockAuth) {
-      return _mockRegister(email: email, password: password, name: name);
-    }
-
-    // Jika tidak, gunakan API real
-    return _apiRegister(email: email, password: password, name: name);
-  }
-
-  // Mock Register untuk testing (tanpa API)
-  Future<AuthResponse> _mockRegister({
-    required String email,
-    required String password,
-    required String name,
-  }) async {
-    // Simulate network delay
-    await Future.delayed(Duration(seconds: 2));
-
-    // Validasi sederhana
-    if (email.isEmpty || password.isEmpty || name.isEmpty) {
-      throw Exception('Data tidak boleh kosong');
-    }
-
-    // Mock registration success
-    return AuthResponse(
-      success: true,
-      message: 'Registrasi berhasil',
-      user: UserModel(
-        id: 'USER-${DateTime.now().millisecondsSinceEpoch}',
-        name: name,
-        email: email,
-        phone: '081234567890',
-        address: 'Jakarta, Indonesia',
-        createdAt: DateTime.now(),
-        role: 'USER', 
-      ),
-      token: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-    );
-  }
-
-  // Real API Register
-  Future<AuthResponse> _apiRegister({
-    required String email,
-    required String password,
-    required String name,
-  }) async {
+  Future<Map<String, dynamic>> register(
+    String name,
+    String email,
+    String address,
+    String phone,
+    String password,
+    String role,
+    String subRole,
+  ) async {
     try {
-      final registerRequest = RegisterRequest(
-        email: email,
-        password: password,
-        name: name,
-      );
-
-      final response = await apiClient.dio.post(
-        '/auth/register',
-        data: registerRequest.toJson(),
-      );
-
-      if (response.statusCode == 201) {
-        return AuthResponse.fromJson(response.data);
-      } else {
-        throw Exception('Register failed');
-      }
-    } on DioException catch (e) {
-      throw Exception('Register error: ${e.message}');
+      return await apiClient.post('auth/register', {
+        'name': name,
+        'email': email,
+        'address': address,
+        'phone': phone,
+        'password': password,
+        'role': role,
+        'sub_role': subRole,
+      });
     } catch (e) {
-      throw Exception('Unexpected error: $e');
+      return {
+        'success': false,
+        'message': 'Terjadi kesalahan saat registrasi: ${e.toString()}',
+      };
     }
   }
 
-  // Logout
+  Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    return token != null && token.isNotEmpty;
+  }
+
   Future<void> logout() async {
-    try {
-      // Jika mock mode aktif, gunakan mock logout
-      if (useMockAuth) {
-        await _mockLogout();
-      } else {
-        // Jika tidak, gunakan API real
-        await _apiLogout();
-      }
-      apiClient.removeToken();
-    } on DioException catch (e) {
-      throw Exception('Logout error: ${e.message}');
-    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
   }
 
-  // Mock Logout
-  Future<void> _mockLogout() async {
-    // Simulate network delay
-    await Future.delayed(Duration(seconds: 1));
-  }
-
-  // Real API Logout
-  Future<void> _apiLogout() async {
-    await apiClient.dio.post('/auth/logout');
-  }
-
-  // Verify Token
-  Future<UserModel> verifyToken() async {
-    try {
-      final response = await apiClient.dio.get('/auth/verify');
-
-      if (response.statusCode == 200) {
-        return UserModel.fromJson(response.data);
-      } else {
-        throw Exception('Token verification failed');
-      }
-    } on DioException catch (e) {
-      throw Exception('Token verification error: ${e.message}');
-    }
+  Future<void> _saveAuthData({
+    required String token,
+    required Map<String, dynamic> userData,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    await prefs.setString('user', json.encode(userData));
   }
 }

@@ -1,14 +1,17 @@
+// lib/features/admin/screens/admin_products_screen.dart
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import '../../../core/constants/app_constants.dart';
-import '../../../core/widgets/common_widgets.dart';
-import '../controllers/admin_controller.dart';
-import '../models/admin_product_model.dart';
+import 'package:parisy_app/core/constants/app_constants.dart';
+import 'package:parisy_app/core/utils/category_helper.dart';
+import 'package:parisy_app/core/widgets/common_widgets.dart';
+import 'package:parisy_app/features/user/marketplace/models/product_model.dart';
+import 'package:parisy_app/features/user/marketplace/controllers/marketplace_controller.dart';
 
 class AdminProductsScreen extends StatefulWidget {
-  const AdminProductsScreen({Key? key}) : super(key: key);
+  const AdminProductsScreen({super.key});
 
   @override
   State<AdminProductsScreen> createState() => _AdminProductsScreenState();
@@ -22,7 +25,9 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
     super.initState();
     _searchController = TextEditingController();
     Future.microtask(() {
-      context.read<AdminController>().loadProducts();
+      if (mounted) {
+        context.read<MarketplaceController>().loadAdminProducts();
+      }
     });
   }
 
@@ -35,66 +40,49 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(AppColors.neutralWhite),
-      appBar: AppBar(
-        backgroundColor: Color(AppColors.primaryGreen),
-        elevation: 0,
-        title: Text('Kelola Barang'),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Search bar
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 labelText: 'Cari Barang',
-                hintText: 'Cari nama atau deskripsi',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               onChanged: (value) {
                 if (value.isNotEmpty) {
-                  context.read<AdminController>().searchProducts(value);
+                  context.read<MarketplaceController>().searchProducts(value);
                 } else {
-                  context.read<AdminController>().loadProducts();
+                  context.read<MarketplaceController>().resetFilters();
                 }
               },
             ),
           ),
-
-          // Products list
           Expanded(
-            child: Consumer<AdminController>(
-              builder: (context, adminController, _) {
-                if (adminController.state == AdminState.loading) {
-                  return Center(child: CircularProgressIndicator());
+            child: Consumer<MarketplaceController>(
+              builder: (context, controller, _) {
+                if (controller.state == MarketplaceState.loading &&
+                    controller.products.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
                 }
-
-                if (adminController.products.isEmpty) {
-                  return Center(child: Text('Tidak ada barang'));
+                if (controller.products.isEmpty) {
+                  return const Center(child: Text('Tidak ada barang tersedia'));
                 }
-
                 return ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: adminController.products.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: controller.products.length,
                   itemBuilder: (context, index) {
-                    final product = adminController.products[index];
-                    return _ProductCard(
+                    final product = controller.products[index];
+                    return _ProductManagementCard(
                       product: product,
-                      onEdit: () {
-                        _showProductDialog(context, product);
-                      },
-                      onDelete: () {
-                        _showDeleteDialog(context, product.id);
-                      },
+                      onEdit: () => _showProductDialog(context, product),
+                      onDelete: () =>
+                          _showDeleteDialog(context, product.id, product.name),
                     );
                   },
                 );
@@ -104,166 +92,40 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Color(AppColors.primaryGreen),
-        onPressed: () {
-          _showProductDialog(context, null);
-        },
-        child: Icon(Icons.add),
+        backgroundColor: AppColors.primaryBlack,
+        onPressed: () => _showProductDialog(context, null),
+        child: const Icon(Icons.add, color: AppColors.neutralWhite),
       ),
     );
   }
 
-  void _showProductDialog(BuildContext context, AdminProductModel? product) {
+  void _showProductDialog(BuildContext context, ProductModel? product) {
     showDialog(
       context: context,
       builder: (context) => _ProductFormDialog(product: product),
     );
   }
 
-  void _showDeleteDialog(BuildContext context, String productId) {
+  void _showDeleteDialog(BuildContext context, int id, String name) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Hapus Barang'),
-        content: Text('Apakah Anda yakin ingin menghapus barang ini?'),
+        title: const Text('Hapus Barang'),
+        content: Text('Apakah Anda yakin ingin menghapus $name?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Batal'),
+            child: const Text('Batal'),
           ),
           TextButton(
-            onPressed: () {
-              context.read<AdminController>().deleteProduct(productId);
+            onPressed: () async {
               Navigator.pop(context);
+              await context.read<MarketplaceController>().deleteProduct(id);
             },
-            child: Text(
+            child: const Text(
               'Hapus',
-              style: TextStyle(color: Color(AppColors.errorRed)),
+              style: TextStyle(color: AppColors.errorRed),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProductCard extends StatelessWidget {
-  final AdminProductModel product;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _ProductCard({
-    required this.product,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Color(AppColors.neutralWhite),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Color(AppColors.neutralGray), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Product image placeholder
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Color(AppColors.neutralGray),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.image,
-                  color: Color(AppColors.neutralDarkGray),
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(AppColors.neutralBlack),
-                      ),
-                    ),
-                    Text(
-                      product.description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(AppColors.neutralDarkGray),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Rp ${product.price.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Color(AppColors.primaryGreen),
-                          ),
-                        ),
-                        Text(
-                          'Stok: ${product.stock}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(AppColors.neutralDarkGray),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                product.category,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Color(AppColors.neutralDarkGray),
-                ),
-              ),
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.edit,
-                      color: Color(AppColors.primaryGreen),
-                    ),
-                    onPressed: onEdit,
-                    iconSize: 18,
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.delete, color: Color(AppColors.errorRed)),
-                    onPressed: onDelete,
-                    iconSize: 18,
-                  ),
-                ],
-              ),
-            ],
           ),
         ],
       ),
@@ -272,8 +134,7 @@ class _ProductCard extends StatelessWidget {
 }
 
 class _ProductFormDialog extends StatefulWidget {
-  final AdminProductModel? product;
-
+  final ProductModel? product;
   const _ProductFormDialog({this.product});
 
   @override
@@ -281,22 +142,23 @@ class _ProductFormDialog extends StatefulWidget {
 }
 
 class _ProductFormDialogState extends State<_ProductFormDialog> {
+  final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _descriptionController;
+  late TextEditingController _descController;
   late TextEditingController _priceController;
   late TextEditingController _stockController;
-  late TextEditingController _categoryController;
-  late TextEditingController _sellerEmailController;
-  final _formKey = GlobalKey<FormState>();
-
-  File? _selectedImage;
-  final ImagePicker _imagePicker = ImagePicker();
+  XFile? _pickedImage;
+  bool _isLoading = false;
+  bool _isPredicting = false;
+  String? _selectedCategory;
+  String? _predictedCategory;
+  final List<String> _categories = CategoryHelper.categories;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.product?.name ?? '');
-    _descriptionController = TextEditingController(
+    _descController = TextEditingController(
       text: widget.product?.description ?? '',
     );
     _priceController = TextEditingController(
@@ -305,75 +167,53 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
     _stockController = TextEditingController(
       text: widget.product?.stock.toString() ?? '',
     );
-    _categoryController = TextEditingController(
-      text: widget.product?.category ?? '',
-    );
-    _sellerEmailController = TextEditingController(
-      text: widget.product?.sellerEmail ?? '',
-    );
+    _selectedCategory = widget.product?.category;
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    _priceController.dispose();
-    _stockController.dispose();
-    _categoryController.dispose();
-    _sellerEmailController.dispose();
-    super.dispose();
-  }
+  Future<void> _takePicture() async {
+    final controller = context.read<MarketplaceController>();
+    final img = await controller.pickImageFromCamera();
 
-  Future<void> _pickImageFromGallery() async {
-    final XFile? image = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-    );
-    if (image != null) {
+    if (img != null) {
       setState(() {
-        _selectedImage = File(image.path);
+        _pickedImage = img;
+        _isPredicting = true;
       });
-    }
-  }
 
-  Future<void> _takePhotoFromCamera() async {
-    final XFile? image = await _imagePicker.pickImage(
-      source: ImageSource.camera,
-    );
-    if (image != null) {
-      setState(() {
-        _selectedImage = File(image.path);
-      });
-    }
-  }
+      try {
+        // Prediksi kategori secara otomatis - AI selalu return kategori
+        final predictedCat = await controller.predictCategory(img);
 
-  void _showImageSourceDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Pilih Sumber Foto'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.camera_alt),
-              title: Text('Ambil Foto dengan Kamera'),
-              onTap: () {
-                Navigator.pop(context);
-                _takePhotoFromCamera();
-              },
+        if (mounted) {
+          setState(() {
+            _isPredicting = false;
+            _predictedCategory = predictedCat;
+            _selectedCategory = predictedCat; // Set otomatis ke dropdown
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${CategoryHelper.getEmoji(predictedCat)} Kategori: ${CategoryHelper.toDisplayFormat(predictedCat)}',
+              ),
+              backgroundColor: AppColors.primaryGreen,
+              duration: const Duration(seconds: 3),
             ),
-            ListTile(
-              leading: Icon(Icons.photo_library),
-              title: Text('Pilih dari Galeri'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImageFromGallery();
-              },
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isPredicting = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal memprediksi kategori: ${e.toString()}'),
+              backgroundColor: AppColors.errorRed,
+              duration: const Duration(seconds: 3),
             ),
-          ],
-        ),
-      ),
-    );
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -386,107 +226,355 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Image Preview
-              Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Color(AppColors.neutralGray),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Color(AppColors.neutralGray),
-                    width: 2,
+              GestureDetector(
+                onTap: _isPredicting ? null : _takePicture,
+                child: Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.primaryGreen.withOpacity(0.3),
+                    ),
+                  ),
+                  child: _isPredicting
+                      ? const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircularProgressIndicator(
+                              color: AppColors.primaryGreen,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Memprediksi kategori...',
+                              style: TextStyle(fontSize: 11),
+                            ),
+                          ],
+                        )
+                      : _pickedImage != null
+                      ? Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.file(
+                                File(_pickedImage!.path),
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
+                            ),
+                            if (_predictedCategory != null)
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryGreen,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.2),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        CategoryHelper.getEmoji(
+                                          _predictedCategory!,
+                                        ),
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        CategoryHelper.toDisplayFormat(
+                                          _predictedCategory!,
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            // Tombol untuk ambil foto ulang
+                            Positioned(
+                              bottom: 8,
+                              right: 8,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryBlack.withOpacity(
+                                    0.7,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  onPressed: _takePicture,
+                                  tooltip: 'Ambil foto ulang',
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : widget.product != null
+                      ? Stack(
+                          children: [
+                            // Tampilkan gambar dari database (base64)
+                            widget.product!.imageUrl.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.memory(
+                                      base64Decode(widget.product!.imageUrl),
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey[300],
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    Icons.image_outlined,
+                                                    size: 50,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    'Gagal memuat gambar',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey[700],
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                    ),
+                                  )
+                                : Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.image_outlined,
+                                          size: 50,
+                                          color: Colors.grey[600],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Gambar Produk',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[700],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          widget.product!.name,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.grey[600],
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                            Positioned(
+                              bottom: 8,
+                              right: 8,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGreen,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  onPressed: _takePicture,
+                                  tooltip: 'Ambil foto baru',
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.camera_alt,
+                              size: 40,
+                              color: AppColors.primaryGreen,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              "Ambil Foto",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              "AI akan prediksi otomatis",
+                              style: TextStyle(fontSize: 9, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Nama',
+                  hintText: 'Nama Barang',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: _selectedImage != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Image.file(_selectedImage!, fit: BoxFit.cover),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.image,
-                            color: Color(AppColors.neutralDarkGray),
-                            size: 40,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Tidak ada foto',
-                            style: TextStyle(
-                              color: Color(AppColors.neutralDarkGray),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nama barang harus diisi';
+                  }
+                  if (value.trim().length < 3) {
+                    return 'Nama barang minimal 3 karakter';
+                  }
+                  return null;
+                },
               ),
-              SizedBox(height: 12),
-
-              // Upload Image Button
-              ElevatedButton.icon(
-                onPressed: _showImageSourceDialog,
-                icon: Icon(Icons.photo_camera),
-                label: Text('Pilih Foto'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(AppColors.primaryGreen),
-                  foregroundColor: Color(AppColors.neutralWhite),
-                  minimumSize: Size(double.infinity, 40),
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // Form Fields
-              InputField(
-                label: 'Nama Barang',
-                hint: 'Masukkan nama barang',
-                controller: _nameController,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Nama harus diisi' : null,
-              ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               InputField(
                 label: 'Deskripsi',
-                hint: 'Masukkan deskripsi',
-                controller: _descriptionController,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Deskripsi harus diisi' : null,
+                hint: 'Deskripsi',
+                controller: _descController,
+                maxLines: 2,
               ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Harga',
-                hint: 'Masukkan harga',
+              const SizedBox(height: 12),
+              TextFormField(
                 controller: _priceController,
+                decoration: InputDecoration(
+                  labelText: 'Harga',
+                  hintText: 'Harga (Rp)',
+                  prefixText: 'Rp ',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 keyboardType: TextInputType.number,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Harga harus diisi' : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Harga harus diisi';
+                  }
+                  final price = double.tryParse(value);
+                  if (price == null || price <= 0) {
+                    return 'Harga harus lebih dari 0';
+                  }
+                  return null;
+                },
               ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Stok',
-                hint: 'Masukkan stok',
+              const SizedBox(height: 12),
+              TextFormField(
                 controller: _stockController,
+                decoration: InputDecoration(
+                  labelText: 'Stok',
+                  hintText: 'Jumlah Stok',
+                  suffixText: 'pcs',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 keyboardType: TextInputType.number,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Stok harus diisi' : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Stok harus diisi';
+                  }
+                  final stock = int.tryParse(value);
+                  if (stock == null || stock < 0) {
+                    return 'Stok tidak boleh negatif';
+                  }
+                  return null;
+                },
               ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Kategori',
-                hint: 'Masukkan kategori',
-                controller: _categoryController,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Kategori harus diisi' : null,
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Kategori',
+                    hintText: 'Pilih kategori',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    suffixIcon: _predictedCategory != null
+                        ? Icon(
+                            Icons.auto_awesome,
+                            color: AppColors.primaryGreen,
+                          )
+                        : null,
+                  ),
+                  items: _categories
+                      .map(
+                        (cat) => DropdownMenuItem(
+                          value: cat,
+                          child: Text(CategoryHelper.getDisplayWithEmoji(cat)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => _selectedCategory = value),
+                ),
               ),
-              SizedBox(height: 12),
-              InputField(
-                label: 'Email Penjual',
-                hint: 'Masukkan email penjual',
-                controller: _sellerEmailController,
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Email penjual harus diisi' : null,
+              const SizedBox(height: 8),
+              Text(
+                _predictedCategory != null
+                    ? 'Kategori diprediksi AI, Anda masih bisa mengubahnya'
+                    : 'Ambil foto produk untuk prediksi kategori otomatis',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: _predictedCategory != null
+                      ? AppColors.primaryGreen
+                      : Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ],
           ),
@@ -495,37 +583,201 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Batal'),
+          child: const Text('Batal'),
         ),
-        TextButton(
-          onPressed: () {
+        PrimaryButton(
+          label: 'Simpan',
+          width: 100,
+          isLoading: _isLoading,
+          onPressed: () async {
             if (_formKey.currentState!.validate()) {
-              final product = AdminProductModel(
-                id:
-                    widget.product?.id ??
-                    'PROD-${DateTime.now().millisecondsSinceEpoch}',
-                name: _nameController.text,
-                description: _descriptionController.text,
-                price: double.parse(_priceController.text),
-                stock: int.parse(_stockController.text),
-                category: _categoryController.text,
-                sellerEmail: _sellerEmailController.text,
-                imageUrl: _selectedImage?.path,
-                createdAt: widget.product?.createdAt ?? DateTime.now(),
-              );
-
-              if (widget.product == null) {
-                context.read<AdminController>().addProduct(product);
-              } else {
-                context.read<AdminController>().updateProduct(product);
+              // Validasi foto - hanya wajib untuk produk baru
+              if (_pickedImage == null && widget.product == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Harap ambil foto produk terlebih dahulu!"),
+                    backgroundColor: AppColors.errorRed,
+                  ),
+                );
+                return;
               }
 
-              Navigator.pop(context);
+              // Validasi kategori
+              if (_selectedCategory == null || _selectedCategory!.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Kategori harus diisi! Ambil foto untuk prediksi otomatis atau pilih manual.",
+                    ),
+                    backgroundColor: AppColors.errorRed,
+                  ),
+                );
+                return;
+              }
+
+              // Validasi harga
+              final price = double.tryParse(_priceController.text);
+              if (price == null || price <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Harga harus lebih dari 0!"),
+                    backgroundColor: AppColors.errorRed,
+                  ),
+                );
+                return;
+              }
+
+              // Validasi stok
+              final stock = int.tryParse(_stockController.text);
+              if (stock == null || stock < 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Stok tidak boleh negatif!"),
+                    backgroundColor: AppColors.errorRed,
+                  ),
+                );
+                return;
+              }
+
+              setState(() => _isLoading = true);
+
+              final controller = context.read<MarketplaceController>();
+
+              // Jika edit dan ada foto baru, atau tambah baru
+              bool success;
+              if (widget.product == null) {
+                // Mode tambah - wajib ada foto
+                success = await controller.addProductWithCamera(
+                  name: _nameController.text.trim(),
+                  description: _descController.text.trim(),
+                  price: price,
+                  stock: stock,
+                  image: _pickedImage!,
+                  category: _selectedCategory,
+                );
+              } else {
+                // Mode edit
+                if (_pickedImage != null) {
+                  // Ada foto baru, update dengan foto baru
+                  success = await controller.updateProductWithNewImage(
+                    id: widget.product!.id,
+                    name: _nameController.text.trim(),
+                    description: _descController.text.trim(),
+                    price: price,
+                    stock: stock,
+                    image: _pickedImage!,
+                    category: _selectedCategory,
+                  );
+                } else {
+                  // Tidak ada foto baru, update tanpa foto
+                  success = await controller.updateProductWithoutImage(
+                    id: widget.product!.id,
+                    name: _nameController.text.trim(),
+                    description: _descController.text.trim(),
+                    price: price,
+                    stock: stock,
+                    category: _selectedCategory!,
+                  );
+                }
+              }
+
+              if (success && mounted) {
+                Navigator.pop(context);
+                // Tampilkan pesan sukses
+                final categoryDisplay = _selectedCategory != null
+                    ? CategoryHelper.getDisplayWithEmoji(_selectedCategory!)
+                    : '';
+                final actionText = widget.product == null
+                    ? 'ditambahkan'
+                    : 'diupdate';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      _predictedCategory != null && widget.product == null
+                          ? '✅ Produk berhasil $actionText!\nKategori: $categoryDisplay'
+                          : '✅ Produk berhasil $actionText!',
+                    ),
+                    backgroundColor: AppColors.primaryGreen,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+                controller.clearError();
+              } else if (mounted) {
+                // Tampilkan error message dengan detail
+                final errorMsg =
+                    controller.errorMessage ?? 'Gagal menyimpan produk';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(errorMsg),
+                    backgroundColor: AppColors.errorRed,
+                    duration: const Duration(seconds: 4),
+                    action: SnackBarAction(
+                      label: 'Tutup',
+                      textColor: Colors.white,
+                      onPressed: () {},
+                    ),
+                  ),
+                );
+              }
+
+              if (mounted) {
+                setState(() => _isLoading = false);
+              }
             }
           },
-          child: Text('Simpan'),
         ),
       ],
+    );
+  }
+}
+
+class _ProductManagementCard extends StatelessWidget {
+  final ProductModel product;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _ProductManagementCard({
+    required this.product,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.fastfood),
+        ),
+        title: Text(
+          product.name,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          'Rp ${product.price.toStringAsFixed(0)} | Stok: ${product.stock}\nKategori: ${product.category}',
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              onPressed: onEdit,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: onDelete,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

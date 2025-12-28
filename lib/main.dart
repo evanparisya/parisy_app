@@ -1,16 +1,26 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/constants/app_constants.dart';
 import 'features/auth/controllers/auth_controller.dart';
 import 'features/auth/screens/login_screen.dart';
+
+// Import Screens Roles
 import 'features/admin/screens/admin_dashboard_screen.dart';
-import 'features/cart/controllers/cart_controller.dart';
-import 'features/cart/screens/cart_screen.dart';
-import 'features/marketplace/screens/marketplace_screen.dart';
-import 'features/orders/screens/order_history_screen.dart';
-import 'features/profile/screens/profile_screen.dart';
-import 'injection_container.dart';
+import 'features/rt/screens/rt_dashboard_screen.dart';
+import 'features/rw/screens/rw_dashboard_screen.dart';
+import 'features/sekretaris/screens/sekretaris_dashboard_screen.dart';
+import 'features/bendahara/screens/bendahara_dashboard_screen.dart';
+
+// Import User Features
+import 'features/user/cart/controllers/cart_controller.dart';
+import 'features/user/marketplace/screens/marketplace_screen.dart';
+import 'features/user/cart/screens/cart_screen.dart';
+import 'features/user/orders/screens/order_history_screen.dart'; // Perbaikan Impor
+import 'features/user/profile/screens/profile_screen.dart';
+
+import 'injection_container.dart'; // Import dipertahankan
 
 void main() {
   runApp(const MyApp());
@@ -22,21 +32,20 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
+      // FIX 1 & 3: Akses static method dengan nama kelas InjectionContainer
       providers: InjectionContainer.provideProviders(),
       child: MaterialApp(
         title: AppStrings.appName,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Color(AppColors.primaryGreen),
-          ),
+          colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryGreen),
           fontFamily: 'Poppins',
         ),
-        // Tambahkan rute untuk ProfileScreen (Jika belum ada)
+        // Definisikan rute global jika diperlukan
         routes: {
           '/login': (context) => LoginScreen(),
-          '/cart': (context) => MainNavigationApp(initialIndex: 2),
+          '/user_home': (context) => MainNavigationApp(initialIndex: 0),
         },
         home: const RootApp(),
       ),
@@ -45,21 +54,33 @@ class MyApp extends StatelessWidget {
 }
 
 class RootApp extends StatelessWidget {
-  const RootApp({Key? key}) : super(key: key);
+  const RootApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Memantau status otentikasi
+    // Perbaikan: Hapus local variable authController jika tidak digunakan di RootApp
     return Consumer<AuthController>(
       builder: (context, authController, _) {
-        if (authController.isAuthenticated) {
-          // Check role: ADMIN, RT, atau RW
-          final role = authController.currentUser?.role;
-          final isManagement = role == 'ADMIN' || role == 'RT' || role == 'RW'; 
+        if (authController.isAuthenticated &&
+            authController.currentUser != null) {
+          final subRole = authController.currentUser!.subRole;
 
-          if (isManagement) {
-            return AdminDashboardScreen();
-          } else {
-            return MainNavigationApp();
+          // Pisahkan routing berdasarkan sub_role manajemen
+          switch (subRole) {
+            case AppStrings.subRoleAdmin:
+              return AdminDashboardScreen();
+            case AppStrings.subRoleRT:
+              return RtDashboardScreen();
+            case AppStrings.subRoleRW:
+              return RwDashboardScreen();
+            case AppStrings.subRoleBendahara:
+              return BendaharaDashboardScreen();
+            case AppStrings.subRoleSekretaris:
+              return SekretarisDashboardScreen();
+            case AppStrings.subRoleWarga:
+            default:
+              return MainNavigationApp(); // Default Warga
           }
         } else {
           return LoginScreen();
@@ -69,9 +90,10 @@ class RootApp extends StatelessWidget {
   }
 }
 
+// Navigasi Utama untuk peran 'Warga' (User)
 class MainNavigationApp extends StatefulWidget {
   final int initialIndex;
-  const MainNavigationApp({Key? key, this.initialIndex = 0}) : super(key: key);
+  const MainNavigationApp({super.key, this.initialIndex = 0});
 
   @override
   State<MainNavigationApp> createState() => _MainNavigationAppState();
@@ -85,7 +107,7 @@ class _MainNavigationAppState extends State<MainNavigationApp> {
     const OrderHistoryScreen(),
     const CartScreen(),
   ];
-  
+
   @override
   void initState() {
     super.initState();
@@ -94,154 +116,167 @@ class _MainNavigationAppState extends State<MainNavigationApp> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false,
+    // FIX 4: Ganti WillPopScope dengan PopScope
+    return PopScope(
+      canPop: false, // Mencegah kembali dari Home
       child: Scaffold(
-        body: _screens[_currentIndex],
+        body: IndexedStack(index: _currentIndex, children: _screens),
         bottomNavigationBar: Consumer<CartController>(
           builder: (context, cartController, _) {
+            // FIX 2: Ganti itemUniqueCount (yang tidak terdefinisi) dengan itemCount (yang benar)
+            final cartItemCount = cartController.itemCount;
+
             return BottomNavigationBar(
               currentIndex: _currentIndex,
-              backgroundColor: Color(AppColors.neutralWhite),
-              selectedItemColor: Color(AppColors.primaryGreen),
-              unselectedItemColor: Color(AppColors.neutralDarkGray),
+              backgroundColor: AppColors.background,
+              selectedItemColor: AppColors.primaryBlack,
+              unselectedItemColor: AppColors.neutralDarkGray,
+              showSelectedLabels: false,
+              showUnselectedLabels: false,
+              type: BottomNavigationBarType.fixed,
               onTap: (index) {
                 setState(() => _currentIndex = index);
               },
               items: [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.storefront_outlined),
-                  activeIcon: Icon(Icons.storefront),
-                  label: 'Marketplace',
+                _buildNavItem(
+                  Icons.storefront_outlined,
+                  Icons.storefront,
+                  'Home',
+                  0,
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.shopping_bag_outlined),
-                  activeIcon: Icon(Icons.shopping_bag),
-                  label: 'Pesanan',
+                _buildNavItem(
+                  Icons.shopping_bag_outlined,
+                  Icons.shopping_bag,
+                  'Pesanan',
+                  1,
                 ),
-                BottomNavigationBarItem(
-                  icon: Badge(
-                    label: cartController.itemCount > 0
-                        ? Text('${cartController.itemCount}')
-                        : null,
-                    child: Icon(Icons.shopping_cart_outlined),
-                  ),
-                  activeIcon: Badge(
-                    label: cartController.itemCount > 0
-                        ? Text('${cartController.itemCount}')
-                        : null,
-                    child: Icon(Icons.shopping_cart),
-                  ),
-                  label: 'Keranjang',
+                _buildNavItemWithBadge(
+                  cartItemCount,
+                  Icons.shopping_cart_outlined,
+                  Icons.shopping_cart,
+                  'Keranjang',
+                  2,
                 ),
               ],
             );
           },
         ),
-        appBar: AppBar(
-          backgroundColor: Color(AppColors.primaryGreen),
-          elevation: 0,
-          title: Consumer<AuthController>(
-            builder: (context, authController, _) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppStrings.appName,
-                          style: TextStyle(
-                            color: Color(AppColors.neutralWhite),
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          'Halo, ${authController.currentUser?.name ?? 'User'}',
-                          style: TextStyle(
-                            color: Color(AppColors.neutralWhite),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'profile') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ProfileScreen(),
-                          ),
-                        );
-                      } else if (value == 'logout') {
-                        context.read<AuthController>().logout();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(value: 'profile', child: Text('Profile')),
-                      PopupMenuItem(value: 'logout', child: Text('Logout')),
-                    ],
-                    child: Icon(
-                      Icons.account_circle,
-                      color: Color(AppColors.neutralWhite),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+        appBar: _buildAppBar(context),
       ),
     );
   }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  BottomNavigationBarItem _buildNavItem(
+    IconData outlineIcon,
+    IconData filledIcon,
+    String label,
+    int index,
+  ) {
+    return BottomNavigationBarItem(
+      icon: Icon(_currentIndex == index ? filledIcon : outlineIcon),
+      label: label,
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+  BottomNavigationBarItem _buildNavItemWithBadge(
+    int count,
+    IconData outlineIcon,
+    IconData filledIcon,
+    String label,
+    int index,
+  ) {
+    return BottomNavigationBarItem(
+      icon: Badge(
+        label: count > 0
+            ? Text(
+                '$count',
+                style: TextStyle(color: AppColors.neutralWhite, fontSize: 10),
+              )
+            : null,
+        backgroundColor: AppColors.errorRed,
+        isLabelVisible: count > 0,
+        child: Icon(_currentIndex == index ? filledIcon : outlineIcon),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      label: label,
+    );
+  }
+
+  AppBar _buildAppBar(BuildContext context) {
+    final authController = context.read<AuthController>();
+    return AppBar(
+      backgroundColor: AppColors.background,
+      elevation: 0,
+      title: Text(
+        AppStrings.appName,
+        style: TextStyle(
+          color: AppColors.primaryBlack,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+      actions: [
+        PopupMenuButton<String>(
+          onSelected: (value) async {
+            if (value == 'profile') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileScreen()),
+              );
+            } else if (value == 'logout') {
+              // Show logout confirmation dialog
+              final shouldLogout = await showDialog<bool>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Konfirmasi Logout'),
+                    content: const Text(
+                      'Apakah Anda yakin ingin keluar dari akun ini?',
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        child: const Text('Batal'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        child: const Text(
+                          'Logout',
+                          style: TextStyle(color: AppColors.errorRed),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+
+              if (shouldLogout == true && mounted) {
+                await context.read<AuthController>().logout();
+                if (mounted) {
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil('/login', (route) => false);
+                }
+              }
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(value: 'profile', child: Text('Profile')),
+            PopupMenuItem(value: 'logout', child: Text('Logout')),
+          ],
+          child: Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: CircleAvatar(
+              radius: 15,
+              backgroundColor: AppColors.neutralGray,
+              child: Icon(
+                Icons.person,
+                color: AppColors.neutralDarkGray,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
